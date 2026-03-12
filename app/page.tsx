@@ -60,7 +60,7 @@ export default function Tabla() {
   }, []);
 
   return (
-    <div style={{ padding: "20px 10px", backgroundColor: "#F8FAFC", minHeight: "100vh", fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ padding: "20px 10px", backgroundColor: "#F8FAFC", minHeight: "100vh", color: "#1E293B", fontFamily: "'Inter', sans-serif" }}>
       <h1 style={{ textAlign: "center", marginBottom: "20px", fontSize: "1.5rem", color: "#0F172A" }}>🏆 DASHBOARD</h1>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "1000px", margin: "0 auto" }}>
@@ -70,7 +70,7 @@ export default function Tabla() {
           <div style={{ backgroundColor: "#0F172A", color: "#FFFFFF", padding: "12px", fontWeight: "bold" }}>Tabla de Posiciones</div>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
             <thead>
-              <tr style={{ backgroundColor: "#F1F5F9", color: "#64748B" }}>
+              <tr style={{ backgroundColor: "#F1F5F9", color: "#475569" }}>
                 <th style={{ padding: "10px", textAlign: "left" }}>EQUIPO</th>
                 <th style={{ padding: "10px" }}>PJ</th>
                 <th style={{ padding: "10px" }}>GF</th>
@@ -82,13 +82,13 @@ export default function Tabla() {
               {tabla.map((e, i) => {
                 const esTop2 = i < 2;
                 return (
-                  <tr key={e.nombre} style={{ backgroundColor: esTop2 ? "#F0FDF4" : "transparent", borderBottom: "1px solid #F1F5F9" }}>
-                    <td style={{ padding: "12px 8px", cursor: "pointer", fontWeight: "600", textDecoration: "underline" }} onClick={() => setEquipoSeleccionado(e.nombre)}>
+                  <tr key={e.nombre} style={{ backgroundColor: esTop2 ? "#DCFCE7" : "transparent", borderBottom: "1px solid #E2E8F0" }}>
+                    <td style={{ padding: "12px 8px", cursor: "pointer", fontWeight: "600", textDecoration: "underline", color: "#0F172A" }} onClick={() => setEquipoSeleccionado(e.nombre)}>
                       {esTop2 ? "⭐ " : ""} {e.nombre}
                     </td>
-                    <td style={{ padding: "12px", textAlign: "center" }}>{e.pj}</td>
-                    <td style={{ padding: "12px", textAlign: "center" }}>{e.gf}</td>
-                    <td style={{ padding: "12px", textAlign: "center" }}>{e.gc}</td>
+                    <td style={{ padding: "12px", textAlign: "center", color: "#334155" }}>{e.pj}</td>
+                    <td style={{ padding: "12px", textAlign: "center", color: "#334155" }}>{e.gf}</td>
+                    <td style={{ padding: "12px", textAlign: "center", color: "#334155" }}>{e.gc}</td>
                     <td style={{ padding: "12px", textAlign: "center", fontWeight: "800", color: "#B45309" }}>{e.puntos}</td>
                   </tr>
                 );
@@ -99,12 +99,12 @@ export default function Tabla() {
 
         {/* GOLEADORES */}
         <div style={{ backgroundColor: "#FFFFFF", borderRadius: "12px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
-          <div style={{ backgroundColor: "#0F172A", color: "#F59E0B", padding: "12px", fontWeight: "bold" }}>⚽ TOP GOLEADORES</div>
+          <div style={{ backgroundColor: "#0F172A", color: "#FBBF24", padding: "12px", fontWeight: "bold" }}>⚽ TOP GOLEADORES</div>
           <div style={{ padding: "10px" }}>
             {goleadores.map((g, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", fontSize: "0.85rem" }}>
-                <span style={{ fontWeight: "500" }}>{g.nombre}</span>
-                <span style={{ fontWeight: "800" }}>{g.goles}</span>
+                <span style={{ fontWeight: "600", color: "#1E293B" }}>{g.nombre}</span>
+                <span style={{ fontWeight: "800", color: "#0F172A" }}>{g.goles}</span>
               </div>
             ))}
           </div>
@@ -114,12 +114,12 @@ export default function Tabla() {
         {equipoSeleccionado && (
           <div style={{ backgroundColor: "#FFFFFF", borderRadius: "12px", padding: "16px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "15px" }}>
-              <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Historial: {equipoSeleccionado}</h2>
-              <button onClick={() => setEquipoSeleccionado(null)} style={{ padding: "5px 10px", cursor: "pointer", backgroundColor: "#0F172A", color: "#fff", border: "none", borderRadius: "4px" }}>Cerrar</button>
+              <h2 style={{ margin: 0, fontSize: "1.1rem", color: "#0F172A" }}>Historial: {equipoSeleccionado}</h2>
+              <button onClick={() => setEquipoSeleccionado(null)} style={{ padding: "6px 12px", cursor: "pointer", backgroundColor: "#0F172A", color: "#FFFFFF", border: "none", borderRadius: "6px" }}>Cerrar</button>
             </div>
             {partidos.filter(p => p.local === equipoSeleccionado || p.visitante === equipoSeleccionado).map((p) => (
-              <div key={p.id} style={{ padding: "12px", backgroundColor: "#F8FAFC", marginBottom: "10px", borderRadius: "8px", borderLeft: "4px solid #B45309" }}>
-                <div style={{ fontWeight: "700", marginBottom: "5px" }}>{p.local} <span style={{ color: "#B45309" }}>{p.golesLocal} - {p.golesVisitante}</span> {p.visitante}</div>
+              <div key={p.id} style={{ padding: "12px", backgroundColor: "#F1F5F9", marginBottom: "10px", borderRadius: "8px", borderLeft: "4px solid #D97706" }}>
+                <div style={{ fontWeight: "700", color: "#0F172A", marginBottom: "5px" }}>{p.local} <span style={{ color: "#D97706" }}>{p.golesLocal} - {p.golesVisitante}</span> {p.visitante}</div>
                 <div style={{ fontSize: "0.8rem", color: "#475569" }}>⚽ Goleadores: {p.goleadoresLocal || "---"} | {p.goleadoresVisitante || "---"}</div>
                 <div style={{ fontSize: "0.8rem", color: "#475569" }}>⭐ MVP: {p.mvp || "---"}</div>
               </div>
