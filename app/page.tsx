@@ -10,7 +10,6 @@ export default function Tabla() {
   const [goleadores, setGoleadores] = useState<{ nombre: string; goles: number }[]>([]);
   const [equipoSeleccionado, setEquipoSeleccionado] = useState<string | null>(null);
 
-  // ... (Tu función calcularEstadisticas se mantiene igual) ...
   const calcularEstadisticas = (equiposDocs: any[], partidosDocs: any[]) => {
     const tablaTemp: any = {};
     const contadorGoles: { [key: string]: number } = {};
@@ -31,6 +30,7 @@ export default function Tabla() {
         else if (gL < gV) tablaTemp[p.visitante].puntos += 3;
         else { tablaTemp[p.local].puntos += 1; tablaTemp[p.visitante].puntos += 1; }
       }
+
       const procesarGoles = (texto: string) => {
         if (!texto) return;
         texto.split(",").forEach(item => {
@@ -46,82 +46,93 @@ export default function Tabla() {
     });
 
     setTabla(Object.values(tablaTemp).sort((a: any, b: any) => b.puntos - a.puntos || a.gc - b.gc));
-    setGoleadores(Object.entries(contadorGoles).map(([nombre, goles]) => ({ nombre, goles })).sort((a, b) => b.goles - a.goles).slice(0, 10));
+    setGoleadores(Object.entries(contadorGoles)
+      .map(([nombre, goles]) => ({ nombre, goles }))
+      .sort((a, b) => b.goles - a.goles)
+      .slice(0, 10));
   };
 
   useEffect(() => {
-    const unsubE = onSnapshot(collection(db, "equipos"), (s) => { calcularEstadisticas(s.docs, partidos.map(p => ({ data: () => p }))); });
+    let equiposData: any[] = [];
+    let partidosData: any[] = [];
+    const unsubE = onSnapshot(collection(db, "equipos"), (s) => { equiposData = s.docs; calcularEstadisticas(equiposData, partidosData); });
     const unsubP = onSnapshot(collection(db, "partidos"), (s) => { 
-      const pData = s.docs.map(d => ({id: d.id, ...d.data()}));
-      setPartidos(pData);
-      calcularEstadisticas([], s.docs); 
+      setPartidos(s.docs.map(d => ({id: d.id, ...d.data()}))); 
+      partidosData = s.docs;
+      calcularEstadisticas(equiposData, partidosData); 
     });
     return () => { unsubE(); unsubP(); };
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8 text-slate-900">
-      <h1 className="text-2xl md:text-3xl font-bold text-center mb-8">🏆 DASHBOARD DE TORNEO</h1>
+    <div style={{ padding: "20px 10px", backgroundColor: "#F8FAFC", minHeight: "100vh", color: "#1E293B", fontFamily: "'Inter', sans-serif" }}>
+      <h1 style={{ textAlign: "center", marginBottom: "20px", fontSize: "1.5rem", color: "#0F172A" }}>🏆 DASHBOARD</h1>
 
-      {/* Contenedor principal: Cambia de columna a fila */}
-      <div className="flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto">
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "1000px", margin: "0 auto" }}>
         
-        {/* Tabla responsiva */}
-        <div className="flex-2 bg-white rounded-xl shadow-md overflow-hidden">
-          <div className="bg-slate-900 text-white p-4 font-bold">Tabla de Posiciones</div>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
-              <thead className="bg-slate-100 text-slate-500">
-                <tr>
-                  <th className="p-3 text-left">EQUIPO</th>
-                  <th className="p-3">PJ</th>
-                  <th className="p-3">GF</th>
-                  <th className="p-3">PTS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tabla.map((e, i) => (
-                  <tr key={e.nombre} className={`border-b ${i < 2 ? 'bg-green-50' : ''}`}>
-                    <td className="p-3 font-semibold underline cursor-pointer" onClick={() => setEquipoSeleccionado(e.nombre)}>
-                      {i < 2 ? "⭐ " : ""} {e.nombre}
+        {/* TABLA */}
+        <div style={{ backgroundColor: "#FFFFFF", borderRadius: "12px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)", overflowX: "auto" }}>
+          <div style={{ backgroundColor: "#0F172A", color: "#FFFFFF", padding: "12px", fontWeight: "bold" }}>Tabla de Posiciones</div>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+            <thead>
+              <tr style={{ backgroundColor: "#F1F5F9", color: "#64748B" }}>
+                <th style={{ padding: "10px", textAlign: "left" }}>EQUIPO</th>
+                <th style={{ padding: "10px" }}>PJ</th>
+                <th style={{ padding: "10px" }}>GF</th>
+                <th style={{ padding: "10px" }}>GC</th>
+                <th style={{ padding: "10px" }}>PTS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tabla.map((e, i) => {
+                const esTop2 = i < 2;
+                return (
+                  <tr key={e.nombre} style={{ 
+                    backgroundColor: esTop2 ? "#F0FDF4" : "transparent",
+                    borderBottom: "1px solid #F1F5F9" 
+                  }}>
+                    <td style={{ padding: "12px 8px", cursor: "pointer", fontWeight: "600", textDecoration: "underline" }} onClick={() => setEquipoSeleccionado(e.nombre)}>
+                      {esTop2 ? "⭐ " : ""} {e.nombre}
                     </td>
-                    <td className="p-3 text-center">{e.pj}</td>
-                    <td className="p-3 text-center">{e.gf}</td>
-                    <td className="p-3 text-center font-bold text-amber-700">{e.puntos}</td>
+                    <td style={{ padding: "12px", textAlign: "center" }}>{e.pj}</td>
+                    <td style={{ padding: "12px", textAlign: "center" }}>{e.gf}</td>
+                    <td style={{ padding: "12px", textAlign: "center" }}>{e.gc}</td>
+                    <td style={{ padding: "12px", textAlign: "center", fontWeight: "800", color: "#B45309" }}>{e.puntos}</td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* GOLEADORES */}
+        <div style={{ backgroundColor: "#FFFFFF", borderRadius: "12px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+          <div style={{ backgroundColor: "#0F172A", color: "#F59E0B", padding: "12px", fontWeight: "bold" }}>⚽ TOP GOLEADORES</div>
+          <div style={{ padding: "10px" }}>
+            {goleadores.map((g, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", fontSize: "0.85rem" }}>
+                <span style={{ fontWeight: "500" }}>{g.nombre}</span>
+                <span style={{ fontWeight: "800" }}>{g.goles}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Top Goleadores */}
-        <div className="lg:w-1/3 bg-white rounded-xl shadow-md p-6">
-          <h2 className="font-bold text-amber-600 mb-4">⚽ TOP GOLEADORES</h2>
-          {goleadores.map((g, i) => (
-            <div key={i} className="flex justify-between py-2 border-b">
-              <span>{g.nombre}</span>
-              <span className="font-bold">{g.goles}</span>
+        {/* HISTORIAL */}
+        {equipoSeleccionado && (
+          <div style={{ backgroundColor: "#FFFFFF", borderRadius: "12px", padding: "16px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "15px" }}>
+              <h2 style={{ margin: 0 }}>Historial: {equipoSeleccionado}</h2>
+              <button onClick={() => setEquipoSeleccionado(null)} style={{ padding: "5px 10px", cursor: "pointer" }}>Cerrar</button>
             </div>
-          ))}
-        </div>
+            {partidos.filter(p => p.local === equipoSeleccionado || p.visitante === equipoSeleccionado).map((p) => (
+              <div key={p.id} style={{ padding: "10px", backgroundColor: "#F8FAFC", marginBottom: "8px", borderLeft: "3px solid #B45309" }}>
+                <strong>{p.local} {p.golesLocal} - {p.golesVisitante} {p.visitante}</strong>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-
-      {/* Historial de partidos */}
-      {equipoSeleccionado && (
-        <div className="max-w-6xl mx-auto mt-6 bg-white p-6 rounded-xl shadow-md">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Historial: {equipoSeleccionado}</h2>
-            <button onClick={() => setEquipoSeleccionado(null)} className="bg-slate-900 text-white px-4 py-2 rounded-lg">Cerrar</button>
-          </div>
-          {partidos.filter(p => p.local === equipoSeleccionado || p.visitante === equipoSeleccionado).map((p) => (
-            <div key={p.id} className="p-4 bg-slate-50 mb-3 rounded-lg border-l-4 border-amber-600 text-sm">
-              <p className="font-bold">{p.local} <span className="text-amber-700">{p.golesLocal}-{p.golesVisitante}</span> {p.visitante}</p>
-              <p className="text-slate-600">⚽ {p.goleadoresLocal || "---"} | {p.goleadoresVisitante || "---"}</p>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
