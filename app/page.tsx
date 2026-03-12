@@ -30,7 +30,6 @@ export default function Tabla() {
         else if (gL < gV) tablaTemp[p.visitante].puntos += 3;
         else { tablaTemp[p.local].puntos += 1; tablaTemp[p.visitante].puntos += 1; }
       }
-
       const procesarGoles = (texto: string) => {
         if (!texto) return;
         texto.split(",").forEach(item => {
@@ -44,12 +43,8 @@ export default function Tabla() {
       procesarGoles(p.goleadoresLocal || "");
       procesarGoles(p.goleadoresVisitante || "");
     });
-
     setTabla(Object.values(tablaTemp).sort((a: any, b: any) => b.puntos - a.puntos || a.gc - b.gc));
-    setGoleadores(Object.entries(contadorGoles)
-      .map(([nombre, goles]) => ({ nombre, goles }))
-      .sort((a, b) => b.goles - a.goles)
-      .slice(0, 10));
+    setGoleadores(Object.entries(contadorGoles).map(([nombre, goles]) => ({ nombre, goles })).sort((a, b) => b.goles - a.goles).slice(0, 10));
   };
 
   useEffect(() => {
@@ -65,7 +60,7 @@ export default function Tabla() {
   }, []);
 
   return (
-    <div style={{ padding: "20px 10px", backgroundColor: "#F8FAFC", minHeight: "100vh", color: "#1E293B", fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ padding: "20px 10px", backgroundColor: "#F8FAFC", minHeight: "100vh", fontFamily: "'Inter', sans-serif" }}>
       <h1 style={{ textAlign: "center", marginBottom: "20px", fontSize: "1.5rem", color: "#0F172A" }}>🏆 DASHBOARD</h1>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "1000px", margin: "0 auto" }}>
@@ -87,10 +82,7 @@ export default function Tabla() {
               {tabla.map((e, i) => {
                 const esTop2 = i < 2;
                 return (
-                  <tr key={e.nombre} style={{ 
-                    backgroundColor: esTop2 ? "#F0FDF4" : "transparent",
-                    borderBottom: "1px solid #F1F5F9" 
-                  }}>
+                  <tr key={e.nombre} style={{ backgroundColor: esTop2 ? "#F0FDF4" : "transparent", borderBottom: "1px solid #F1F5F9" }}>
                     <td style={{ padding: "12px 8px", cursor: "pointer", fontWeight: "600", textDecoration: "underline" }} onClick={() => setEquipoSeleccionado(e.nombre)}>
                       {esTop2 ? "⭐ " : ""} {e.nombre}
                     </td>
@@ -118,16 +110,18 @@ export default function Tabla() {
           </div>
         </div>
 
-        {/* HISTORIAL */}
+        {/* HISTORIAL DETALLADO */}
         {equipoSeleccionado && (
           <div style={{ backgroundColor: "#FFFFFF", borderRadius: "12px", padding: "16px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "15px" }}>
-              <h2 style={{ margin: 0 }}>Historial: {equipoSeleccionado}</h2>
-              <button onClick={() => setEquipoSeleccionado(null)} style={{ padding: "5px 10px", cursor: "pointer" }}>Cerrar</button>
+              <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Historial: {equipoSeleccionado}</h2>
+              <button onClick={() => setEquipoSeleccionado(null)} style={{ padding: "5px 10px", cursor: "pointer", backgroundColor: "#0F172A", color: "#fff", border: "none", borderRadius: "4px" }}>Cerrar</button>
             </div>
             {partidos.filter(p => p.local === equipoSeleccionado || p.visitante === equipoSeleccionado).map((p) => (
-              <div key={p.id} style={{ padding: "10px", backgroundColor: "#F8FAFC", marginBottom: "8px", borderLeft: "3px solid #B45309" }}>
-                <strong>{p.local} {p.golesLocal} - {p.golesVisitante} {p.visitante}</strong>
+              <div key={p.id} style={{ padding: "12px", backgroundColor: "#F8FAFC", marginBottom: "10px", borderRadius: "8px", borderLeft: "4px solid #B45309" }}>
+                <div style={{ fontWeight: "700", marginBottom: "5px" }}>{p.local} <span style={{ color: "#B45309" }}>{p.golesLocal} - {p.golesVisitante}</span> {p.visitante}</div>
+                <div style={{ fontSize: "0.8rem", color: "#475569" }}>⚽ Goleadores: {p.goleadoresLocal || "---"} | {p.goleadoresVisitante || "---"}</div>
+                <div style={{ fontSize: "0.8rem", color: "#475569" }}>⭐ MVP: {p.mvp || "---"}</div>
               </div>
             ))}
           </div>
