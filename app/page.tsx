@@ -16,7 +16,7 @@ export default function Tabla() {
 
     equiposDocs.forEach((doc) => {
       const data = doc.data();
-      // Agregamos dg: 0
+      // Inicializamos dg en 0
       tablaTemp[data.nombre] = { nombre: data.nombre, puntos: 0, pj: 0, gf: 0, gc: 0, dg: 0 };
     });
 
@@ -25,10 +25,11 @@ export default function Tabla() {
       if (tablaTemp[p.local] && tablaTemp[p.visitante]) {
         tablaTemp[p.local].pj++; tablaTemp[p.visitante].pj++;
         const gL = Number(p.golesLocal || 0); const gV = Number(p.golesVisitante || 0);
+        
         tablaTemp[p.local].gf += gL; tablaTemp[p.local].gc += gV;
         tablaTemp[p.visitante].gf += gV; tablaTemp[p.visitante].gc += gL;
-        
-        // Actualizar diferencia
+
+        // Calculamos la diferencia de goles (GF - GC)
         tablaTemp[p.local].dg = tablaTemp[p.local].gf - tablaTemp[p.local].gc;
         tablaTemp[p.visitante].dg = tablaTemp[p.visitante].gf - tablaTemp[p.visitante].gc;
 
@@ -49,8 +50,9 @@ export default function Tabla() {
       procesarGoles(p.goleadoresLocal || "");
       procesarGoles(p.goleadoresVisitante || "");
     });
-    // Ordenar: Puntos -> DG -> GF
-    setTabla(Object.values(tablaTemp).sort((a: any, b: any) => b.puntos - a.puntos || b.dg - a.dg || b.gf - a.gf));
+    
+    // Ordenar: Primero por puntos, si empatan, por Diferencia de Gol (b.dg - a.dg)
+    setTabla(Object.values(tablaTemp).sort((a: any, b: any) => b.puntos - a.puntos || b.dg - a.dg));
     setGoleadores(Object.entries(contadorGoles).map(([nombre, goles]) => ({ nombre, goles })).sort((a, b) => b.goles - a.goles).slice(0, 10));
   };
 
@@ -58,10 +60,10 @@ export default function Tabla() {
     let equiposData: any[] = [];
     let partidosData: any[] = [];
     const unsubE = onSnapshot(collection(db, "equipos"), (s) => { equiposData = s.docs; calcularEstadisticas(equiposData, partidosData); });
-    const unsubP = onSnapshot(collection(db, "partidos"), (s) => { 
-      setPartidos(s.docs.map(d => ({id: d.id, ...d.data()}))); 
+    const unsubP = onSnapshot(collection(db, "partidos"), (s) => {
+      setPartidos(s.docs.map(d => ({id: d.id, ...d.data()})));
       partidosData = s.docs;
-      calcularEstadisticas(equiposData, partidosData); 
+      calcularEstadisticas(equiposData, partidosData);
     });
     return () => { unsubE(); unsubP(); };
   }, []);
@@ -72,6 +74,7 @@ export default function Tabla() {
 
       <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "1000px", margin: "0 auto" }}>
         
+        {/* TABLA */}
         <div style={{ backgroundColor: "#FFFFFF", borderRadius: "12px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)", overflowX: "auto" }}>
           <div style={{ backgroundColor: "#0F172A", color: "#FFFFFF", padding: "12px", fontWeight: "bold" }}>Tabla de Posiciones</div>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
@@ -81,7 +84,7 @@ export default function Tabla() {
                 <th style={{ padding: "10px" }}>PJ</th>
                 <th style={{ padding: "10px" }}>GF</th>
                 <th style={{ padding: "10px" }}>GC</th>
-                <th style={{ padding: "10px" }}>DG</th> {/* Nueva columna */}
+                <th style={{ padding: "10px" }}>DG</th>
                 <th style={{ padding: "10px" }}>PTS</th>
               </tr>
             </thead>
@@ -96,7 +99,7 @@ export default function Tabla() {
                     <td style={{ padding: "12px", textAlign: "center", color: "#334155" }}>{e.pj}</td>
                     <td style={{ padding: "12px", textAlign: "center", color: "#334155" }}>{e.gf}</td>
                     <td style={{ padding: "12px", textAlign: "center", color: "#334155" }}>{e.gc}</td>
-                    <td style={{ padding: "12px", textAlign: "center", color: "#334155" }}>{e.dg}</td> {/* Valor DG */}
+                    <td style={{ padding: "12px", textAlign: "center", color: "#334155" }}>{e.dg}</td>
                     <td style={{ padding: "12px", textAlign: "center", fontWeight: "800", color: "#B45309" }}>{e.puntos}</td>
                   </tr>
                 );
@@ -105,7 +108,8 @@ export default function Tabla() {
           </table>
         </div>
 
-        {/* ... (resto del componente sin cambios) ... */}
+        {/* GOLEADORES Y HISTORIAL... (resto sin cambios) */}
+        {/* ... */}
       </div>
     </div>
   );
