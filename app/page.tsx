@@ -60,7 +60,7 @@ export default function Tabla() {
   }, []);
 
   return (
-    <div style={{ padding: "20px 10px", backgroundColor: "#F8FAFC", minHeight: "100vh", color: "#1E293B", fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ padding: "20px 10px", backgroundColor: "#5b7ea1", minHeight: "100vh", color: "#1E293B", fontFamily: "'Inter', sans-serif" }}>
       <h1 style={{ textAlign: "center", marginBottom: "20px", fontSize: "1.5rem", color: "#0F172A" }}>🏆 DASHBOARD</h1>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "1000px", margin: "0 auto" }}>
