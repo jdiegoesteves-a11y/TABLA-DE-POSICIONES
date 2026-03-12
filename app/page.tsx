@@ -16,7 +16,6 @@ export default function Tabla() {
 
     equiposDocs.forEach((doc) => {
       const data = doc.data();
-      // Inicializamos dg en 0
       tablaTemp[data.nombre] = { nombre: data.nombre, puntos: 0, pj: 0, gf: 0, gc: 0, dg: 0 };
     });
 
@@ -25,11 +24,10 @@ export default function Tabla() {
       if (tablaTemp[p.local] && tablaTemp[p.visitante]) {
         tablaTemp[p.local].pj++; tablaTemp[p.visitante].pj++;
         const gL = Number(p.golesLocal || 0); const gV = Number(p.golesVisitante || 0);
-        
         tablaTemp[p.local].gf += gL; tablaTemp[p.local].gc += gV;
         tablaTemp[p.visitante].gf += gV; tablaTemp[p.visitante].gc += gL;
-
-        // Calculamos la diferencia de goles (GF - GC)
+        
+        // Cálculo correcto de DG
         tablaTemp[p.local].dg = tablaTemp[p.local].gf - tablaTemp[p.local].gc;
         tablaTemp[p.visitante].dg = tablaTemp[p.visitante].gf - tablaTemp[p.visitante].gc;
 
@@ -51,8 +49,8 @@ export default function Tabla() {
       procesarGoles(p.goleadoresVisitante || "");
     });
     
-    // Ordenar: Primero por puntos, si empatan, por Diferencia de Gol (b.dg - a.dg)
-    setTabla(Object.values(tablaTemp).sort((a: any, b: any) => b.puntos - a.puntos || b.dg - a.dg));
+    // Ordenar: Puntos -> DG -> GF
+    setTabla(Object.values(tablaTemp).sort((a: any, b: any) => b.puntos - a.puntos || b.dg - a.dg || b.gf - a.gf));
     setGoleadores(Object.entries(contadorGoles).map(([nombre, goles]) => ({ nombre, goles })).sort((a, b) => b.goles - a.goles).slice(0, 10));
   };
 
@@ -60,10 +58,10 @@ export default function Tabla() {
     let equiposData: any[] = [];
     let partidosData: any[] = [];
     const unsubE = onSnapshot(collection(db, "equipos"), (s) => { equiposData = s.docs; calcularEstadisticas(equiposData, partidosData); });
-    const unsubP = onSnapshot(collection(db, "partidos"), (s) => {
-      setPartidos(s.docs.map(d => ({id: d.id, ...d.data()})));
+    const unsubP = onSnapshot(collection(db, "partidos"), (s) => { 
+      setPartidos(s.docs.map(d => ({id: d.id, ...d.data()}))); 
       partidosData = s.docs;
-      calcularEstadisticas(equiposData, partidosData);
+      calcularEstadisticas(equiposData, partidosData); 
     });
     return () => { unsubE(); unsubP(); };
   }, []);
@@ -108,8 +106,35 @@ export default function Tabla() {
           </table>
         </div>
 
-        {/* GOLEADORES Y HISTORIAL... (resto sin cambios) */}
-        {/* ... */}
+        {/* GOLEADORES */}
+        <div style={{ backgroundColor: "#FFFFFF", borderRadius: "12px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+          <div style={{ backgroundColor: "#0F172A", color: "#FBBF24", padding: "12px", fontWeight: "bold" }}>⚽ TOP GOLEADORES</div>
+          <div style={{ padding: "10px" }}>
+            {goleadores.map((g, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", fontSize: "0.85rem" }}>
+                <span style={{ fontWeight: "600", color: "#1E293B" }}>{g.nombre}</span>
+                <span style={{ fontWeight: "800", color: "#0F172A" }}>{g.goles}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* HISTORIAL DETALLADO */}
+        {equipoSeleccionado && (
+          <div style={{ backgroundColor: "#FFFFFF", borderRadius: "12px", padding: "16px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "15px" }}>
+              <h2 style={{ margin: 0, fontSize: "1.1rem", color: "#0F172A" }}>Historial: {equipoSeleccionado}</h2>
+              <button onClick={() => setEquipoSeleccionado(null)} style={{ padding: "6px 12px", cursor: "pointer", backgroundColor: "#0F172A", color: "#FFFFFF", border: "none", borderRadius: "6px" }}>Cerrar</button>
+            </div>
+            {partidos.filter(p => p.local === equipoSeleccionado || p.visitante === equipoSeleccionado).map((p) => (
+              <div key={p.id} style={{ padding: "12px", backgroundColor: "#F1F5F9", marginBottom: "10px", borderRadius: "8px", borderLeft: "4px solid #D97706" }}>
+                <div style={{ fontWeight: "700", color: "#0F172A", marginBottom: "5px" }}>{p.local} <span style={{ color: "#D97706" }}>{p.golesLocal} - {p.golesVisitante}</span> {p.visitante}</div>
+                <div style={{ fontSize: "0.8rem", color: "#475569" }}>⚽ Goleadores: {p.goleadoresLocal || "---"} | {p.goleadoresVisitante || "---"}</div>
+                <div style={{ fontSize: "0.8rem", color: "#475569" }}>⭐ MVP: {p.mvp || "---"}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
