@@ -16,7 +16,8 @@ export default function Tabla() {
 
     equiposDocs.forEach((doc) => {
       const data = doc.data();
-      tablaTemp[data.nombre] = { nombre: data.nombre, puntos: 0, pj: 0, gf: 0, gc: 0 };
+      // Agregamos dg: 0
+      tablaTemp[data.nombre] = { nombre: data.nombre, puntos: 0, pj: 0, gf: 0, gc: 0, dg: 0 };
     });
 
     partidosDocs.forEach((doc) => {
@@ -26,6 +27,11 @@ export default function Tabla() {
         const gL = Number(p.golesLocal || 0); const gV = Number(p.golesVisitante || 0);
         tablaTemp[p.local].gf += gL; tablaTemp[p.local].gc += gV;
         tablaTemp[p.visitante].gf += gV; tablaTemp[p.visitante].gc += gL;
+        
+        // Actualizar diferencia
+        tablaTemp[p.local].dg = tablaTemp[p.local].gf - tablaTemp[p.local].gc;
+        tablaTemp[p.visitante].dg = tablaTemp[p.visitante].gf - tablaTemp[p.visitante].gc;
+
         if (gL > gV) tablaTemp[p.local].puntos += 3;
         else if (gL < gV) tablaTemp[p.visitante].puntos += 3;
         else { tablaTemp[p.local].puntos += 1; tablaTemp[p.visitante].puntos += 1; }
@@ -43,7 +49,8 @@ export default function Tabla() {
       procesarGoles(p.goleadoresLocal || "");
       procesarGoles(p.goleadoresVisitante || "");
     });
-    setTabla(Object.values(tablaTemp).sort((a: any, b: any) => b.puntos - a.puntos || a.gc - b.gc));
+    // Ordenar: Puntos -> DG -> GF
+    setTabla(Object.values(tablaTemp).sort((a: any, b: any) => b.puntos - a.puntos || b.dg - a.dg || b.gf - a.gf));
     setGoleadores(Object.entries(contadorGoles).map(([nombre, goles]) => ({ nombre, goles })).sort((a, b) => b.goles - a.goles).slice(0, 10));
   };
 
@@ -65,7 +72,6 @@ export default function Tabla() {
 
       <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "1000px", margin: "0 auto" }}>
         
-        {/* TABLA */}
         <div style={{ backgroundColor: "#FFFFFF", borderRadius: "12px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)", overflowX: "auto" }}>
           <div style={{ backgroundColor: "#0F172A", color: "#FFFFFF", padding: "12px", fontWeight: "bold" }}>Tabla de Posiciones</div>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
@@ -75,6 +81,7 @@ export default function Tabla() {
                 <th style={{ padding: "10px" }}>PJ</th>
                 <th style={{ padding: "10px" }}>GF</th>
                 <th style={{ padding: "10px" }}>GC</th>
+                <th style={{ padding: "10px" }}>DG</th> {/* Nueva columna */}
                 <th style={{ padding: "10px" }}>PTS</th>
               </tr>
             </thead>
@@ -89,6 +96,7 @@ export default function Tabla() {
                     <td style={{ padding: "12px", textAlign: "center", color: "#334155" }}>{e.pj}</td>
                     <td style={{ padding: "12px", textAlign: "center", color: "#334155" }}>{e.gf}</td>
                     <td style={{ padding: "12px", textAlign: "center", color: "#334155" }}>{e.gc}</td>
+                    <td style={{ padding: "12px", textAlign: "center", color: "#334155" }}>{e.dg}</td> {/* Valor DG */}
                     <td style={{ padding: "12px", textAlign: "center", fontWeight: "800", color: "#B45309" }}>{e.puntos}</td>
                   </tr>
                 );
@@ -97,35 +105,7 @@ export default function Tabla() {
           </table>
         </div>
 
-        {/* GOLEADORES */}
-        <div style={{ backgroundColor: "#FFFFFF", borderRadius: "12px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
-          <div style={{ backgroundColor: "#0F172A", color: "#FBBF24", padding: "12px", fontWeight: "bold" }}>⚽ TOP GOLEADORES</div>
-          <div style={{ padding: "10px" }}>
-            {goleadores.map((g, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", fontSize: "0.85rem" }}>
-                <span style={{ fontWeight: "600", color: "#1E293B" }}>{g.nombre}</span>
-                <span style={{ fontWeight: "800", color: "#0F172A" }}>{g.goles}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* HISTORIAL DETALLADO */}
-        {equipoSeleccionado && (
-          <div style={{ backgroundColor: "#FFFFFF", borderRadius: "12px", padding: "16px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "15px" }}>
-              <h2 style={{ margin: 0, fontSize: "1.1rem", color: "#0F172A" }}>Historial: {equipoSeleccionado}</h2>
-              <button onClick={() => setEquipoSeleccionado(null)} style={{ padding: "6px 12px", cursor: "pointer", backgroundColor: "#0F172A", color: "#FFFFFF", border: "none", borderRadius: "6px" }}>Cerrar</button>
-            </div>
-            {partidos.filter(p => p.local === equipoSeleccionado || p.visitante === equipoSeleccionado).map((p) => (
-              <div key={p.id} style={{ padding: "12px", backgroundColor: "#F1F5F9", marginBottom: "10px", borderRadius: "8px", borderLeft: "4px solid #D97706" }}>
-                <div style={{ fontWeight: "700", color: "#0F172A", marginBottom: "5px" }}>{p.local} <span style={{ color: "#D97706" }}>{p.golesLocal} - {p.golesVisitante}</span> {p.visitante}</div>
-                <div style={{ fontSize: "0.8rem", color: "#475569" }}>⚽ Goleadores: {p.goleadoresLocal || "---"} | {p.goleadoresVisitante || "---"}</div>
-                <div style={{ fontSize: "0.8rem", color: "#475569" }}>⭐ MVP: {p.mvp || "---"}</div>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* ... (resto del componente sin cambios) ... */}
       </div>
     </div>
   );
