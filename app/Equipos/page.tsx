@@ -6,16 +6,18 @@ import { collection, addDoc, onSnapshot, deleteDoc, doc, query, where } from "fi
 
 export default function EquiposPro() {
   const [nombre, setNombre] = useState("");
-  const [config, setConfig] = useState({ genero: "Varones", deporte: "Futbol" });
+  // Agregada la categoría al estado inicial
+  const [config, setConfig] = useState({ genero: "Varones", deporte: "Futbol", categoria: "Inferior" });
   const [equipos, setEquipos] = useState<any[]>([]);
   const [cargando, setCargando] = useState(false);
 
-  // Cargar equipos filtrados por deporte y género para mantener orden
+  // Cargar equipos filtrados por los 3 criterios para que la lista sea precisa
   useEffect(() => {
     const q = query(
       collection(db, "equipos"),
       where("genero", "==", config.genero),
-      where("deporte", "==", config.deporte)
+      where("deporte", "==", config.deporte),
+      where("categoria", "==", config.categoria)
     );
     const unsub = onSnapshot(q, (snapshot) => {
       setEquipos(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -31,6 +33,7 @@ export default function EquiposPro() {
         nombre: nombre.trim(),
         genero: config.genero,
         deporte: config.deporte,
+        categoria: config.categoria, // Ahora se guarda la categoría correctamente
         fechaCreacion: new Date().toISOString()
       });
       setNombre("");
@@ -50,14 +53,13 @@ export default function EquiposPro() {
     <div style={{ minHeight: "100vh", backgroundColor: "#0f172a", color: "#f8fafc", padding: "40px 20px", fontFamily: "'Inter', sans-serif" }}>
       <div style={{ maxWidth: "600px", margin: "0 auto" }}>
         
-        {/* ENCABEZADO PRO */}
         <div style={{ textAlign: "center", marginBottom: "30px" }}>
           <h1 style={{ fontSize: "1.8rem", color: "#fbbf24", margin: "0", letterSpacing: "1px" }}>🛡️ GESTIÓN DE CLUBES</h1>
-          <p style={{ color: "#94a3b8", fontSize: "0.9rem" }}>Registro Oficial de Equipos por Categoría</p>
+          <p style={{ color: "#94a3b8", fontSize: "0.9rem" }}>Registro Oficial por Categoría y Rama</p>
         </div>
 
-        {/* SELECTORES DE FILTRO Y ASIGNACIÓN */}
-        <div style={{ backgroundColor: "#1e293b", padding: "20px", borderRadius: "12px", marginBottom: "20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", border: "1px solid #334155" }}>
+        {/* SELECTORES DE FILTRO Y ASIGNACIÓN (Ahora con Categoría) */}
+        <div style={{ backgroundColor: "#1e293b", padding: "20px", borderRadius: "12px", marginBottom: "20px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", border: "1px solid #334155" }}>
           <div style={inputGroup}>
             <label style={labelStyle}>Género</label>
             <select style={selectStyle} value={config.genero} onChange={(e) => setConfig({...config, genero: e.target.value})}>
@@ -71,6 +73,14 @@ export default function EquiposPro() {
               <option value="Futbol">Fútbol</option>
               <option value="Volley">Volley</option>
               <option value="Basket">Basket</option>
+            </select>
+          </div>
+          <div style={inputGroup}>
+            <label style={labelStyle}>Categoría</label>
+            <select style={selectStyle} value={config.categoria} onChange={(e) => setConfig({...config, categoria: e.target.value})}>
+              <option value="Inferior">Inferior</option>
+              <option value="Intermedia">Intermedia</option>
+              <option value="Superior">Superior</option>
             </select>
           </div>
         </div>
@@ -94,12 +104,12 @@ export default function EquiposPro() {
 
         {/* LISTADO DE EQUIPOS REGISTRADOS */}
         <div style={{ backgroundColor: "#1e293b", borderRadius: "12px", overflow: "hidden", border: "1px solid #334155" }}>
-          <div style={{ padding: "15px", backgroundColor: "#334155", color: "#fbbf24", fontWeight: "bold", fontSize: "0.8rem", textTransform: "uppercase" }}>
-            Equipos en {config.deporte} - {config.genero} ({equipos.length})
+          <div style={{ padding: "15px", backgroundColor: "#334155", color: "#fbbf24", fontWeight: "bold", fontSize: "0.8rem", textTransform: "uppercase", textAlign: "center" }}>
+            Equipos: {config.deporte} {config.genero} - {config.categoria} ({equipos.length})
           </div>
           <div style={{ maxHeight: "400px", overflowY: "auto" }}>
             {equipos.length === 0 ? (
-              <p style={{ padding: "20px", textAlign: "center", color: "#64748b" }}>No hay equipos registrados en esta categoría.</p>
+              <p style={{ padding: "20px", textAlign: "center", color: "#64748b" }}>No hay equipos en esta selección.</p>
             ) : (
               equipos.map((e) => (
                 <div key={e.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px", borderBottom: "1px solid #334155" }}>
@@ -120,8 +130,7 @@ export default function EquiposPro() {
   );
 }
 
-// ESTILOS PROFESIONALES
 const inputGroup = { display: "flex", flexDirection: "column" as const, gap: "5px" };
 const labelStyle = { fontSize: "0.7rem", color: "#94a3b8", fontWeight: "bold", textTransform: "uppercase" as const };
-const selectStyle = { padding: "12px", borderRadius: "8px", backgroundColor: "#0f172a", color: "#fff", border: "1px solid #475569", outline: "none" };
+const selectStyle = { padding: "12px", borderRadius: "8px", backgroundColor: "#0f172a", color: "#fff", border: "1px solid #475569", outline: "none", fontSize: "0.85rem" };
 const inputStyle = { padding: "12px", borderRadius: "8px", backgroundColor: "#0f172a", color: "#fff", border: "1px solid #475569", outline: "none", fontSize: "1rem" };

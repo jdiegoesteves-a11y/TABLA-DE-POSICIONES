@@ -13,11 +13,11 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
   const [equipoSeleccionado, setEquipoSeleccionado] = useState<string | null>(null);
 
   useEffect(() => {
-    // 1. Cargar EQUIPOS
+    // 1. ESCUCHAR EQUIPOS
     const unsubE = onSnapshot(collection(db, "equipos"), (sEquipos) => {
       const equiposData = sEquipos.docs.map(d => d.data());
 
-      // 2. Cargar PARTIDOS (Filtrados por los 3 criterios)
+      // 2. ESCUCHAR PARTIDOS (Filtrados)
       const qPartidos = query(
         collection(db, "partidos"),
         where("genero", "==", genero),
@@ -32,27 +32,42 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
         const tablaTemp: any = {};
         const contadorGoles: { [key: string]: number } = {};
 
-        // Inicializar equipos que pertenecen a esta rama
-        equiposData.filter((e: any) => e.deporte === deporte && e.genero === genero).forEach((e: any) => {
-          tablaTemp[e.nombre] = { nombre: e.nombre, puntos: 0, pj: 0, gf: 0, gc: 0, dg: 0 };
+        // Inicializar solo equipos de esta rama exacta
+        equiposData.filter((e: any) => 
+          e.deporte === deporte && 
+          e.genero === genero && 
+          e.categoria === categoria
+        ).forEach((e: any) => {
+          tablaTemp[e.nombre] = { nombre: e.nombre, puntos: 0, pj: 0, fav: 0, con: 0, dg: 0 };
         });
 
         partidosData.forEach((p: any) => {
           if (tablaTemp[p.local] && tablaTemp[p.visitante]) {
-            const gL = Number(p.golesLocal || 0);
-            const gV = Number(p.golesVisitante || 0);
-            tablaTemp[p.local].pj++; tablaTemp[p.visitante].pj++;
-            tablaTemp[p.local].gf += gL; tablaTemp[p.local].gc += gV;
-            tablaTemp[p.visitante].gf += gV; tablaTemp[p.visitante].gc += gL;
-            tablaTemp[p.local].dg = tablaTemp[p.local].gf - tablaTemp[p.local].gc;
-            tablaTemp[p.visitante].dg = tablaTemp[p.visitante].gf - tablaTemp[p.visitante].gc;
+            const valL = Number(p.golesLocal || 0);
+            const valV = Number(p.golesVisitante || 0);
+            
+            tablaTemp[p.local].pj++; 
+            tablaTemp[p.visitante].pj++;
+            
+            tablaTemp[p.local].fav += valL;
+            tablaTemp[p.local].con += valV;
+            tablaTemp[p.visitante].fav += valV;
+            tablaTemp[p.visitante].con += valL;
+            
+            tablaTemp[p.local].dg = tablaTemp[p.local].fav - tablaTemp[p.local].con;
+            tablaTemp[p.visitante].dg = tablaTemp[p.visitante].fav - tablaTemp[p.visitante].con;
 
-            if (gL > gV) tablaTemp[p.local].puntos += 3;
-            else if (gL < gV) tablaTemp[p.visitante].puntos += 3;
-            else { tablaTemp[p.local].puntos += 1; tablaTemp[p.visitante].puntos += 1; }
+            // Lógica de Puntos
+            if (valL > valV) tablaTemp[p.local].puntos += 3;
+            else if (valL < valV) tablaTemp[p.visitante].puntos += 3;
+            else { 
+                // Empate (Solo en Futbol usualmente)
+                tablaTemp[p.local].puntos += 1; 
+                tablaTemp[p.visitante].puntos += 1; 
+            }
           }
-          // Procesar Goleadores
-          const procesarGoles = (texto: string) => {
+          
+          const procesarAnotadores = (texto: string) => {
             if (!texto) return;
             texto.split(",").forEach(item => {
               const nombre = item.trim().split('(')[0].trim();
@@ -61,15 +76,15 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
               if (nombre) contadorGoles[nombre] = (contadorGoles[nombre] || 0) + cantidad;
             });
           };
-          procesarGoles(p.goleadoresLocal);
-          procesarGoles(p.goleadoresVisitante);
+          procesarAnotadores(p.goleadoresLocal);
+          procesarAnotadores(p.goleadoresVisitante);
         });
 
         setTabla(Object.values(tablaTemp).sort((a: any, b: any) => b.puntos - a.puntos || b.dg - a.dg));
         setGoleadores(Object.entries(contadorGoles).map(([nombre, goles]) => ({ nombre, goles })).sort((a, b) => b.goles - a.goles).slice(0, 8));
       });
 
-      // 3. Cargar CALENDARIO
+      // 3. ESCUCHAR CALENDARIO
       const qCal = query(
         collection(db, "calendario"),
         where("genero", "==", genero),
@@ -83,36 +98,46 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
 
       return () => { unsubP(); unsubC(); };
     });
-
     return () => unsubE();
   }, [genero, deporte, categoria]);
 
+  // Configuración de encabezados dinámicos
+  const getLabels = () => {
+    if (deporte === "Futbol") return { f: "GF", c: "GC", t: "Goles" };
+    if (deporte === "Volley") return { f: "SF", c: "SC", t: "Sets" };
+    if (deporte === "Basket") return { f: "PF", c: "PC", t: "Puntos" };
+    return { f: "F", c: "C", t: "Pts" };
+  };
+  const labels = getLabels();
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "25px", marginTop: "10px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "25px" }}>
       
-      {/* TARJETA PRÓXIMOS PARTIDOS */}
+      {/* SECCIÓN CALENDARIO */}
       <div style={cardStyle}>
-        <div style={headerYellow}>📅 CALENDARIO PRÓXIMO</div>
+        <div style={headerYellow}>📅 PRÓXIMOS PARTIDOS</div>
         <div style={{ padding: "15px" }}>
-          {calendario.length === 0 ? <p style={emptyText}>Sin partidos programados.</p> : 
-            calendario.slice(0, 4).map((p, i) => (
+          {calendario.length === 0 ? <p style={emptyText}>No hay encuentros agendados.</p> : 
+            calendario.slice(0, 3).map((p, i) => (
               <div key={i} style={rowItem}>
-                <span style={{ fontWeight: "600" }}>{p.local} <span style={{color: "#fbbf24"}}>VS</span> {p.visitante}</span>
+                <span style={{ fontWeight: "700" }}>{p.local} <span style={{color: "#fbbf24"}}>VS</span> {p.visitante}</span>
                 <span style={badgeStyle}>{p.fecha} • {p.hora}</span>
               </div>
           ))}
         </div>
       </div>
 
-      {/* TABLA DE POSICIONES */}
+      {/* SECCIÓN TABLA DE POSICIONES */}
       <div style={cardStyle}>
-        <div style={headerBlue}>🏆 CLASIFICACIÓN {categoria.toUpperCase()}</div>
+        <div style={headerBlue}>🏆 TABLA {deporte.toUpperCase()}</div>
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", color: "#f8fafc" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ backgroundColor: "#334155", fontSize: "0.75rem" }}>
+              <tr style={{ backgroundColor: "#334155" }}>
                 <th style={thStyle}>CLUB</th>
                 <th style={thStyle}>PJ</th>
+                <th style={thStyle}>{labels.f}</th>
+                <th style={thStyle}>{labels.c}</th>
                 <th style={thStyle}>DG</th>
                 <th style={thStyle}>PTS</th>
               </tr>
@@ -122,6 +147,8 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
                 <tr key={i} style={{ borderBottom: "1px solid #334155", backgroundColor: i === 0 ? "#1e293b" : "transparent" }}>
                   <td onClick={() => setEquipoSeleccionado(e.nombre)} style={tdTeam}>{i === 0 && "🥇 "}{e.nombre}</td>
                   <td style={tdCenter}>{e.pj}</td>
+                  <td style={tdCenter}>{e.fav}</td>
+                  <td style={tdCenter}>{e.con}</td>
                   <td style={tdCenter}>{e.dg}</td>
                   <td style={tdPoints}>{e.puntos}</td>
                 </tr>
@@ -131,34 +158,38 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
         </div>
       </div>
 
-      {/* TOP GOLEADORES */}
+      {/* SECCIÓN ANOTADORES */}
       <div style={cardStyle}>
-        <div style={headerYellow}>⚽ LÍDERES DE GOLEO</div>
+        <div style={headerYellow}>🔥 LÍDERES ({labels.t})</div>
         <div style={{ padding: "15px" }}>
-          {goleadores.length === 0 ? <p style={emptyText}>Esperando resultados...</p> : 
+          {goleadores.length === 0 ? <p style={emptyText}>Aún no hay registros.</p> : 
             goleadores.map((g, i) => (
               <div key={i} style={rowItem}>
-                <span style={{color: i === 0 ? "#fbbf24" : "white"}}>{i + 1}. {g.nombre}</span>
-                <span style={{fontWeight: "bold"}}>{g.goles} Goles</span>
+                <span style={{color: i === 0 ? "#fbbf24" : "white", fontWeight: "600"}}>{i+1}. {g.nombre}</span>
+                <span style={{fontWeight: "800"}}>{g.goles}</span>
               </div>
-            ))}
+          ))}
         </div>
       </div>
 
-      {/* HISTORIAL DETALLADO (MODAL) */}
+      {/* MODAL DE HISTORIAL */}
       {equipoSeleccionado && (
         <div style={modalOverlay} onClick={() => setEquipoSeleccionado(null)}>
           <div style={modalContent} onClick={e => e.stopPropagation()}>
             <div style={{display: "flex", justifyContent: "space-between", marginBottom: "20px"}}>
-              <h3 style={{color: "#fbbf24", margin: 0}}>Historial: {equipoSeleccionado}</h3>
+              <h3 style={{color: "#fbbf24", margin: 0}}>{equipoSeleccionado}</h3>
               <button onClick={() => setEquipoSeleccionado(null)} style={btnClose}>✖</button>
             </div>
-            {partidos.filter(p => p.local === equipoSeleccionado || p.visitante === equipoSeleccionado).map((p: any, i) => (
-              <div key={i} style={historyItem}>
-                <div style={{fontSize: "0.9rem"}}>{p.local} <b>{p.golesLocal} - {p.golesVisitante}</b> {p.visitante}</div>
-                <div style={{fontSize: "0.7rem", color: "#94a3b8"}}>MVP: {p.mvp || "No definido"}</div>
-              </div>
-            ))}
+            {partidos.filter(p => p.local === equipoSeleccionado || p.visitante === equipoSeleccionado).length === 0 ? (
+              <p style={{fontSize: "0.8rem", color: "#94a3b8"}}>No hay partidos jugados todavía.</p>
+            ) : (
+              partidos.filter(p => p.local === equipoSeleccionado || p.visitante === equipoSeleccionado).map((p: any, i) => (
+                <div key={i} style={historyItem}>
+                  <div style={{fontSize: "0.9rem"}}>{p.local} <b>{p.golesLocal} - {p.golesVisitante}</b> {p.visitante}</div>
+                  <div style={{fontSize: "0.7rem", color: "#94a3b8", marginTop: "5px"}}>MVP: {p.mvp || "---"}</div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
@@ -166,7 +197,7 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
   );
 }
 
-// --- DASHBOARD PRINCIPAL ---
+// --- DASHBOARD PRINCIPAL (SELECTORES) ---
 export default function Dashboard() {
   const [step, setStep] = useState(1);
   const [sel, setSel] = useState({ genero: "", deporte: "", categoria: "" });
@@ -174,26 +205,29 @@ export default function Dashboard() {
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#0f172a", color: "#f8fafc", fontFamily: "'Inter', sans-serif", padding: "20px" }}>
       <div style={{ maxWidth: "500px", margin: "0 auto" }}>
-        <h1 style={{ textAlign: "center", fontSize: "1.8rem", fontWeight: "800", letterSpacing: "-1px", marginBottom: "30px", color: "#fff" }}>
-          TOP<span style={{color: "#fbbf24"}}>SCORE</span> PRO
+        <h1 style={{ textAlign: "center", fontWeight: "900", fontSize: "2rem", marginBottom: "30px", letterSpacing: "-1px" }}>
+          TOP<span style={{color: "#fbbf24"}}>SCORE</span>
         </h1>
 
         {step < 4 ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            <p style={{ textAlign: "center", color: "#94a3b8", fontSize: "0.9rem" }}>Selecciona los filtros para ver resultados</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+            <div style={{textAlign: "center", color: "#94a3b8", fontSize: "0.8rem", marginBottom: "10px"}}>PASO {step} DE 3</div>
             {step === 1 && ["Varones", "Damas"].map(g => (
-              <button key={g} style={btnStep} onClick={() => { setSel({...sel, genero: g}); setStep(2); }}>{g}</button>
+              <button key={g} style={btnMain} onClick={() => { setSel({...sel, genero: g}); setStep(2); }}>{g}</button>
             ))}
             {step === 2 && ["Futbol", "Volley", "Basket"].map(d => (
-              <button key={d} style={btnStep} onClick={() => { setSel({...sel, deporte: d}); setStep(3); }}>{d}</button>
+              <button key={d} style={btnMain} onClick={() => { setSel({...sel, deporte: d}); setStep(3); }}>{d}</button>
             ))}
             {step === 3 && ["Inferior", "Intermedia", "Superior"].map(c => (
-              <button key={c} style={btnStep} onClick={() => { setSel({...sel, categoria: c}); setStep(4); }}>{c}</button>
+              <button key={c} style={btnMain} onClick={() => { setSel({...sel, categoria: c}); setStep(4); }}>{c}</button>
             ))}
           </div>
         ) : (
           <>
-            <button onClick={() => setStep(1)} style={btnBack}>← Volver al Menú</button>
+            <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px"}}>
+              <span style={{fontSize: "0.8rem", color: "#94a3b8"}}>{sel.deporte} • {sel.genero} • {sel.categoria}</span>
+              <button onClick={() => setStep(1)} style={{color: "#fbbf24", background: "none", border: "none", cursor: "pointer", fontWeight: "bold"}}>CAMBIAR</button>
+            </div>
             <VistaDeportiva {...sel} />
           </>
         )}
@@ -202,20 +236,19 @@ export default function Dashboard() {
   );
 }
 
-// --- ESTILOS PROFESIONALES (CSS-in-JS) ---
-const cardStyle = { backgroundColor: "#1e293b", borderRadius: "16px", overflow: "hidden", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.4)", border: "1px solid #334155" };
-const headerBlue = { backgroundColor: "#2563eb", color: "white", padding: "12px 15px", fontWeight: "bold", fontSize: "0.9rem", letterSpacing: "1px" };
-const headerYellow = { backgroundColor: "#fbbf24", color: "#0f172a", padding: "12px 15px", fontWeight: "bold", fontSize: "0.9rem", letterSpacing: "1px" };
-const thStyle = { padding: "12px", textAlign: "left" as const, color: "#94a3b8", fontWeight: "600" };
-const tdTeam = { padding: "15px 12px", fontWeight: "bold", cursor: "pointer", textDecoration: "underline", color: "#3b82f6" };
-const tdCenter = { textAlign: "center" as const, padding: "15px 12px" };
-const tdPoints = { textAlign: "center" as const, padding: "15px 12px", fontWeight: "900", color: "#fbbf24", fontSize: "1.1rem" };
-const btnStep = { padding: "18px", borderRadius: "12px", border: "1px solid #334155", backgroundColor: "#1e293b", color: "white", fontWeight: "bold", cursor: "pointer", fontSize: "1rem" };
-const btnBack = { marginBottom: "15px", background: "none", border: "none", color: "#fbbf24", cursor: "pointer", fontWeight: "bold" };
-const emptyText = { textAlign: "center" as const, color: "#64748b", fontSize: "0.85rem", padding: "20px" };
-const rowItem = { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #334155", fontSize: "0.85rem" };
-const badgeStyle = { backgroundColor: "#334155", padding: "4px 8px", borderRadius: "6px", fontSize: "0.75rem", color: "#cbd5e1" };
-const modalOverlay = { position: "fixed" as const, top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000, padding: "20px" };
-const modalContent = { backgroundColor: "#1e293b", padding: "25px", borderRadius: "20px", width: "100%", maxWidth: "400px", border: "1px solid #fbbf24" };
-const historyItem = { backgroundColor: "#0f172a", padding: "12px", borderRadius: "10px", marginBottom: "10px" };
-const btnClose = { background: "none", border: "none", color: "#f8fafc", fontSize: "1.2rem", cursor: "pointer" };
+// --- ESTILOS ---
+const cardStyle = { backgroundColor: "#1e293b", borderRadius: "20px", overflow: "hidden", border: "1px solid #334155", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" };
+const headerBlue = { backgroundColor: "#2563eb", color: "white", padding: "15px", fontWeight: "900", fontSize: "0.8rem", letterSpacing: "1px" };
+const headerYellow = { backgroundColor: "#fbbf24", color: "#0f172a", padding: "15px", fontWeight: "900", fontSize: "0.8rem", letterSpacing: "1px" };
+const thStyle = { padding: "12px", textAlign: "left" as const, color: "#94a3b8", fontSize: "0.65rem", textTransform: "uppercase" as const };
+const tdTeam = { padding: "15px 12px", fontWeight: "bold", color: "#3b82f6", cursor: "pointer", textDecoration: "underline" };
+const tdCenter = { textAlign: "center" as const, padding: "15px 12px", fontSize: "0.9rem" };
+const tdPoints = { textAlign: "center" as const, padding: "15px 12px", fontWeight: "900", color: "#fbbf24", fontSize: "1.2rem" };
+const btnMain = { padding: "20px", borderRadius: "15px", border: "1px solid #334155", backgroundColor: "#1e293b", color: "white", fontWeight: "bold", cursor: "pointer", fontSize: "1.1rem", transition: "0.2s" };
+const emptyText = { textAlign: "center" as const, color: "#64748b", padding: "20px", fontSize: "0.8rem" };
+const rowItem = { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #334155" };
+const badgeStyle = { backgroundColor: "#334155", padding: "5px 10px", borderRadius: "8px", fontSize: "0.7rem", fontWeight: "bold" };
+const modalOverlay = { position: "fixed" as const, top:0, left:0, width:"100%", height:"100%", backgroundColor:"rgba(0,0,0,0.85)", display:"flex", justifyContent:"center", alignItems:"center", zIndex:1000 };
+const modalContent = { backgroundColor:"#1e293b", padding:"25px", borderRadius:"24px", width:"90%", maxWidth:"400px", border:"1px solid #fbbf24" };
+const historyItem = { backgroundColor: "#0f172a", padding: "15px", borderRadius: "12px", marginBottom: "10px" };
+const btnClose = { background:"none", border:"none", color:"white", fontSize:"1.2rem", cursor:"pointer" };
