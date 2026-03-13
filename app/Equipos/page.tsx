@@ -22,7 +22,15 @@ export default function Equipos() {
 
   const agregarEquipo = async () => {
     if (!nombre.trim()) return;
-    await addDoc(collection(db, "equipos"), { nombre });
+
+    // Validación: Evitar duplicados
+    const yaExiste = equipos.some(e => e.nombre.toLowerCase() === nombre.trim().toLowerCase());
+    if (yaExiste) {
+      alert("Este equipo ya está registrado.");
+      return;
+    }
+
+    await addDoc(collection(db, "equipos"), { nombre: nombre.trim() });
     setNombre("");
   };
 
@@ -41,9 +49,14 @@ export default function Equipos() {
         padding: "30px", 
         borderRadius: "12px", 
         boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-        border: "2px solid #1e293b" // Marco oscuro para definir el contenedor
+        border: "2px solid #1e293b"
       }}>
         
+        {/* Enlace de retorno */}
+        <div style={{ marginBottom: "20px" }}>
+          <a href="/" style={{ color: "#475569", textDecoration: "underline", fontSize: "0.9rem" }}>← Volver al Dashboard</a>
+        </div>
+
         <h1 style={{ color: "#1e293b", textAlign: "center", marginBottom: "20px" }}>⚽ Registrar Equipos</h1>
 
         {/* Input con contraste forzado */}
