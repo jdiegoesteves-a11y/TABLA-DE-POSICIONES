@@ -2,11 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { db } from "../../lib/firebase";
-import { collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, deleteDoc, doc, query, where, orderBy } from "firebase/firestore";
 
-export default function Calendario() {
+export default function CalendarioPro() {
   const [equipos, setEquipos] = useState<any[]>([]);
-  const [programados, setProgramados] = useState<any[]>([]);
+  const [eventos, setEventos] = useState<any[]>([]);
+  const [cargando, setCargando] = useState(false);
+  
+  const [config, setConfig] = useState({
+    genero: "Varones",
+    deporte: "Futbol",
+    categoria: "Inferior"
+  });
+
   const [nuevoPartido, setNuevoPartido] = useState({
     local: "",
     visitante: "",
@@ -14,117 +22,142 @@ export default function Calendario() {
     hora: ""
   });
 
-  // 1. Cargar equipos para los select y partidos programados
+  // 1. Cargar equipos filtrados para los selectores
   useEffect(() => {
-    const unsubE = onSnapshot(collection(db, "equipos"), (s) => {
-      setEquipos(s.docs.map(d => ({ id: d.id, ...d.data() })));
+    const qE = query(
+      collection(db, "equipos"),
+      where("genero", "==", config.genero),
+      where("deporte", "==", config.deporte)
+    );
+    const unsubE = onSnapshot(qE, (s) => {
+      setEquipos(s.docs.map(d => d.data().nombre));
     });
-    
-    // Traemos el calendario ordenado por fecha
-    const qCalendario = query(collection(db, "calendario"), orderBy("fecha", "asc"));
-    const unsubC = onSnapshot(qCalendario, (s) => {
-      setProgramados(s.docs.map(d => ({ id: d.id, ...d.data() })));
+
+    // 2. Cargar calendario filtrado por los 3 criterios
+    const qC = query(
+      collection(db, "calendario"),
+      where("genero", "==", config.genero),
+      where("deporte", "==", config.deporte),
+      where("categoria", "==", config.categoria),
+      orderBy("fecha", "asc")
+    );
+    const unsubC = onSnapshot(qC, (s) => {
+      setEventos(s.docs.map(d => ({ id: d.id, ...d.data() })));
     });
 
     return () => { unsubE(); unsubC(); };
-  }, []);
+  }, [config]);
 
-  const agendarPartido = async () => {
+  const agendar = async () => {
     if (!nuevoPartido.local || !nuevoPartido.visitante || !nuevoPartido.fecha) {
-      alert("Por favor completa los equipos y la fecha");
+      alert("Completa los equipos y la fecha");
       return;
     }
-    await addDoc(collection(db, "calendario"), nuevoPartido);
-    alert("Partido agendado con éxito");
+    setCargando(true);
+    try {
+      await addDoc(collection(db, "calendario"), {
+        ...nuevoPartido,
+        ...config
+      });
+      alert("✅ Partido agendado");
+      setNuevoPartido({ local: "", visitante: "", fecha: "", hora: "" });
+    } catch (e) {
+      alert("Error al agendar");
+    }
+    setCargando(false);
   };
 
-  const eliminarAgendado = async (id: string) => {
-    if (confirm("¿Eliminar este partido del calendario?")) {
+  const eliminar = async (id: string) => {
+    if (confirm("¿Eliminar este evento del calendario?")) {
       await deleteDoc(doc(db, "calendario", id));
     }
   };
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f0f2f5", padding: "40px 20px", color: "#1e293b", fontFamily: "sans-serif" }}>
-      <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", backgroundColor: "#0f172a", color: "#f8fafc", padding: "40px 20px", fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ maxWidth: "650px", margin: "0 auto" }}>
         
-        <div style={{ marginBottom: "20px" }}>
-          <a href="/" style={{ color: "#475569", textDecoration: "underline" }}>← Volver al Dashboard</a>
+        <div style={{ textAlign: "center", marginBottom: "30px" }}>
+          <h1 style={{ fontSize: "1.8rem", color: "#fbbf24", margin: "0" }}>📅 CRONOGRAMA DE JUEGOS</h1>
+          <p style={{ color: "#94a3b8", fontSize: "0.9rem" }}>Programación de Fechas y Horarios</p>
         </div>
 
-        <div style={{ backgroundColor: "#ffffff", padding: "30px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", border: "2px solid #1e293b" }}>
-          <h1 style={{ textAlign: "center", marginBottom: "20px" }}>📅 Programar Calendario</h1>
-
-          {/* FORMULARIO DE REGISTRO */}
-          <div style={{ display: "grid", gap: "15px", marginBottom: "30px" }}>
-            <select 
-              style={{ padding: "12px", borderRadius: "6px", border: "2px solid #1e293b" }}
-              onChange={(e) => setNuevoPartido({...nuevoPartido, local: e.target.value})}
-            >
-              <option value="">Seleccionar Local</option>
-              {equipos.map(e => <option key={e.id} value={e.nombre}>{e.nombre}</option>)}
+        {/* SELECTORES DE CATEGORÍA (FILTROS) */}
+        <div style={{ backgroundColor: "#1e293b", padding: "20px", borderRadius: "12px", marginBottom: "25px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", border: "1px solid #334155" }}>
+          <div style={groupStyle}>
+            <label style={labelStyle}>Género</label>
+            <select style={selectStyle} value={config.genero} onChange={(e) => setConfig({...config, genero: e.target.value})}>
+              <option value="Varones">Varones</option>
+              <option value="Damas">Damas</option>
             </select>
-
-            <select 
-              style={{ padding: "12px", borderRadius: "6px", border: "2px solid #1e293b" }}
-              onChange={(e) => setNuevoPartido({...nuevoPartido, visitante: e.target.value})}
-            >
-              <option value="">Seleccionar Visitante</option>
-              {equipos.map(e => <option key={e.id} value={e.nombre}>{e.nombre}</option>)}
-            </select>
-
-            <div style={{ display: "flex", gap: "10px" }}>
-              <input 
-                type="date" 
-                style={{ flex: 1, padding: "12px", borderRadius: "6px", border: "2px solid #1e293b" }}
-                onChange={(e) => setNuevoPartido({...nuevoPartido, fecha: e.target.value})}
-              />
-              <input 
-                type="time" 
-                style={{ flex: 1, padding: "12px", borderRadius: "6px", border: "2px solid #1e293b" }}
-                onChange={(e) => setNuevoPartido({...nuevoPartido, hora: e.target.value})}
-              />
-            </div>
-
-            <button 
-              onClick={agendarPartido}
-              style={{ backgroundColor: "#1e293b", color: "#fff", padding: "15px", borderRadius: "6px", border: "none", fontWeight: "bold", cursor: "pointer" }}
-            >
-              Agendar Partido
-            </button>
           </div>
+          <div style={groupStyle}>
+            <label style={labelStyle}>Deporte</label>
+            <select style={selectStyle} value={config.deporte} onChange={(e) => setConfig({...config, deporte: e.target.value})}>
+              <option value="Futbol">Fútbol</option>
+              <option value="Volley">Volley</option>
+              <option value="Basket">Basket</option>
+            </select>
+          </div>
+          <div style={groupStyle}>
+            <label style={labelStyle}>Categoría</label>
+            <select style={selectStyle} value={config.categoria} onChange={(e) => setConfig({...config, categoria: e.target.value})}>
+              <option value="Inferior">Inferior</option>
+              <option value="Intermedia">Intermedia</option>
+              <option value="Superior">Superior</option>
+            </select>
+          </div>
+        </div>
 
-          <hr />
+        {/* FORMULARIO DE AGENDAR */}
+        <div style={{ backgroundColor: "#1e293b", padding: "25px", borderRadius: "12px", border: "1px solid #fbbf24", marginBottom: "30px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginBottom: "15px" }}>
+            <select style={selectStyle} value={nuevoPartido.local} onChange={(e) => setNuevoPartido({...nuevoPartido, local: e.target.value})}>
+              <option value="">Local</option>
+              {equipos.map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+            <select style={selectStyle} value={nuevoPartido.visitante} onChange={(e) => setNuevoPartido({...nuevoPartido, visitante: e.target.value})}>
+              <option value="">Visitante</option>
+              {equipos.map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginBottom: "20px" }}>
+            <input type="date" style={selectStyle} value={nuevoPartido.fecha} onChange={(e) => setNuevoPartido({...nuevoPartido, fecha: e.target.value})} />
+            <input type="time" style={selectStyle} value={nuevoPartido.hora} onChange={(e) => setNuevoPartido({...nuevoPartido, hora: e.target.value})} />
+          </div>
+          <button onClick={agendar} disabled={cargando} style={btnGold}>
+            {cargando ? "Agendando..." : "AGENDAR PARTIDO"}
+          </button>
+        </div>
 
-          {/* LISTA DE PRÓXIMOS PARTIDOS */}
-          <h2 style={{ fontSize: "1.2rem", margin: "20px 0" }}>Próximos Encuentros</h2>
-          {programados.length === 0 && <p style={{ color: "#64748b" }}>No hay partidos programados.</p>}
-          
-          {programados.map((p) => (
-            <div key={p.id} style={{ 
-              backgroundColor: "#f8fafc", 
-              padding: "15px", 
-              borderRadius: "8px", 
-              marginBottom: "10px", 
-              border: "1px solid #cbd5e1",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center"
-            }}>
-              <div>
-                <div style={{ fontWeight: "bold", fontSize: "1rem" }}>{p.local} vs {p.visitante}</div>
-                <div style={{ fontSize: "0.85rem", color: "#64748b" }}>🗓️ {p.fecha} | ⏰ {p.hora || "Por definir"}</div>
+        {/* LISTADO DE PRÓXIMOS PARTIDOS */}
+        <div style={{ backgroundColor: "#1e293b", borderRadius: "12px", overflow: "hidden", border: "1px solid #334155" }}>
+          <div style={{ padding: "15px", backgroundColor: "#334155", color: "#fbbf24", fontWeight: "bold", textAlign: "center", fontSize: "0.8rem" }}>
+            PARTIDOS PROGRAMADOS - {config.categoria.toUpperCase()}
+          </div>
+          {eventos.length === 0 ? (
+            <p style={{ padding: "30px", textAlign: "center", color: "#64748b" }}>No hay partidos para esta selección.</p>
+          ) : (
+            eventos.map((ev) => (
+              <div key={ev.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "15px 20px", borderBottom: "1px solid #334155" }}>
+                <div>
+                  <div style={{ fontWeight: "bold", fontSize: "1rem" }}>{ev.local} vs {ev.visitante}</div>
+                  <div style={{ fontSize: "0.8rem", color: "#94a3b8" }}>🗓️ {ev.fecha} | ⏰ {ev.hora || "TBD"}</div>
+                </div>
+                <button onClick={() => eliminar(ev.id)} style={{ color: "#ef4444", background: "none", border: "1px solid #ef4444", padding: "5px 10px", borderRadius: "4px", cursor: "pointer", fontSize: "0.7rem" }}>
+                  ELIMINAR
+                </button>
               </div>
-              <button 
-                onClick={() => eliminarAgendado(p.id)}
-                style={{ backgroundColor: "#ef4444", color: "white", border: "none", padding: "8px 12px", borderRadius: "4px", cursor: "pointer", fontSize: "12px" }}
-              >
-                Eliminar
-              </button>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
   );
 }
+
+// ESTILOS REUTILIZABLES
+const groupStyle = { display: "flex", flexDirection: "column" as const, gap: "5px" };
+const labelStyle = { fontSize: "0.7rem", color: "#94a3b8", fontWeight: "bold", textTransform: "uppercase" as const };
+const selectStyle = { padding: "12px", borderRadius: "8px", backgroundColor: "#0f172a", color: "#fff", border: "1px solid #475569", outline: "none", width: "100%" };
+const btnGold = { width: "100%", padding: "15px", borderRadius: "8px", border: "none", backgroundColor: "#fbbf24", color: "#0f172a", fontWeight: "bold", cursor: "pointer" };
