@@ -11,62 +11,64 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
   const [calendario, setCalendario] = useState<any[]>([]);
   const [goleadores, setGoleadores] = useState<{ nombre: string; goles: number }[]>([]);
   const [equipoSeleccionado, setEquipoSeleccionado] = useState<string | null>(null);
+  
+  // Estados de seguridad para evitar la pantalla negra
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // 1. ESCUCHAR EQUIPOS
-    const unsubE = onSnapshot(collection(db, "equipos"), (sEquipos) => {
-      const equiposData = sEquipos.docs.map(d => d.data());
+    setLoading(true);
+    setError(null);
 
-      // 2. ESCUCHAR PARTIDOS (Filtrados)
+    try {
+      const qEquipos = collection(db, "equipos");
       const qPartidos = query(
         collection(db, "partidos"),
         where("genero", "==", genero),
         where("deporte", "==", deporte),
         where("categoria", "==", categoria)
       );
+      const qCal = query(
+        collection(db, "calendario"),
+        where("genero", "==", genero),
+        where("deporte", "==", deporte),
+        where("categoria", "==", categoria),
+        orderBy("fecha", "asc")
+      );
 
-      const unsubP = onSnapshot(qPartidos, (sPartidos) => {
-        const partidosData = sPartidos.docs.map(d => ({ id: d.id, ...d.data() }));
-        setPartidos(partidosData);
+      let equiposActuales: any[] = [];
+      let partidosActuales: any[] = [];
 
+      // Función unificada para calcular tabla y goleadores sin saturar React
+      const procesarDatos = (equipos: any[], partidosArr: any[]) => {
         const tablaTemp: any = {};
         const contadorGoles: { [key: string]: number } = {};
 
-        // Inicializar solo equipos de esta rama exacta
-        equiposData.filter((e: any) => 
-          e.deporte === deporte && 
-          e.genero === genero && 
-          e.categoria === categoria
-        ).forEach((e: any) => {
-          tablaTemp[e.nombre] = { nombre: e.nombre, puntos: 0, pj: 0, fav: 0, con: 0, dg: 0 };
-        });
+        // 1. Inicializar equipos
+        equipos.filter((e: any) => e.deporte === deporte && e.genero === genero && e.categoria === categoria)
+          .forEach((e: any) => {
+            tablaTemp[e.nombre] = { nombre: e.nombre, puntos: 0, pj: 0, fav: 0, con: 0, dg: 0 };
+          });
 
-        partidosData.forEach((p: any) => {
+        // 2. Procesar partidos
+        partidosArr.forEach((p: any) => {
           if (tablaTemp[p.local] && tablaTemp[p.visitante]) {
             const valL = Number(p.golesLocal || 0);
             const valV = Number(p.golesVisitante || 0);
             
-            tablaTemp[p.local].pj++; 
-            tablaTemp[p.visitante].pj++;
-            
-            tablaTemp[p.local].fav += valL;
-            tablaTemp[p.local].con += valV;
-            tablaTemp[p.visitante].fav += valV;
-            tablaTemp[p.visitante].con += valL;
+            tablaTemp[p.local].pj++; tablaTemp[p.visitante].pj++;
+            tablaTemp[p.local].fav += valL; tablaTemp[p.local].con += valV;
+            tablaTemp[p.visitante].fav += valV; tablaTemp[p.visitante].con += valL;
             
             tablaTemp[p.local].dg = tablaTemp[p.local].fav - tablaTemp[p.local].con;
             tablaTemp[p.visitante].dg = tablaTemp[p.visitante].fav - tablaTemp[p.visitante].con;
 
-            // Lógica de Puntos
             if (valL > valV) tablaTemp[p.local].puntos += 3;
             else if (valL < valV) tablaTemp[p.visitante].puntos += 3;
-            else { 
-                // Empate (Solo en Futbol usualmente)
-                tablaTemp[p.local].puntos += 1; 
-                tablaTemp[p.visitante].puntos += 1; 
-            }
+            else { tablaTemp[p.local].puntos += 1; tablaTemp[p.visitante].puntos += 1; }
           }
-          
+
+          // 3. Procesar Goleadores / Anotadores
           const procesarAnotadores = (texto: string) => {
             if (!texto) return;
             texto.split(",").forEach(item => {
@@ -82,33 +84,44 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
 
         setTabla(Object.values(tablaTemp).sort((a: any, b: any) => b.puntos - a.puntos || b.dg - a.dg));
         setGoleadores(Object.entries(contadorGoles).map(([nombre, goles]) => ({ nombre, goles })).sort((a, b) => b.goles - a.goles).slice(0, 8));
-      });
+      };
 
-      // 3. ESCUCHAR CALENDARIO
-      const qCal = query(
-        collection(db, "calendario"),
-        where("genero", "==", genero),
-        where("deporte", "==", deporte),
-        where("categoria", "==", categoria),
-        orderBy("fecha", "asc")
-      );
+      // Listeners de Firebase
+      const unsubE = onSnapshot(qEquipos, (sEquipos) => {
+        equiposActuales = sEquipos.docs.map(d => d.data());
+        procesarDatos(equiposActuales, partidosActuales);
+      }, (err) => { setError(err.message); setLoading(false); });
+
+      const unsubP = onSnapshot(qPartidos, (sPartidos) => {
+        partidosActuales = sPartidos.docs.map(d => ({ id: d.id, ...d.data() }));
+        setPartidos(partidosActuales);
+        procesarDatos(equiposActuales, partidosActuales);
+        setLoading(false);
+      }, (err) => { setError(err.message); setLoading(false); });
+
       const unsubC = onSnapshot(qCal, (sCal) => {
         setCalendario(sCal.docs.map(d => ({ id: d.id, ...d.data() })));
-      });
+      }, (err) => { setError(err.message); });
 
-      return () => { unsubP(); unsubC(); };
-    });
-    return () => unsubE();
+      return () => { unsubE(); unsubP(); unsubC(); };
+
+    } catch (e: any) {
+      setError(e.message);
+      setLoading(false);
+    }
   }, [genero, deporte, categoria]);
 
-  // Configuración de encabezados dinámicos
-  const getLabels = () => {
-    if (deporte === "Futbol") return { f: "GF", c: "GC", t: "Goles" };
-    if (deporte === "Volley") return { f: "SF", c: "SC", t: "Sets" };
-    if (deporte === "Basket") return { f: "PF", c: "PC", t: "Puntos" };
-    return { f: "F", c: "C", t: "Pts" };
+  const labels = deporte === "Futbol" ? { f: "GF", c: "GC", t: "Goles" } : { f: "PF", c: "PC", t: "Puntos" };
+
+  const renderDetalle = (p: any) => {
+    if (deporte === "Volley") return null;
+    const label = deporte === "Futbol" ? "⚽ Goles: " : "⭐ Puntos: ";
+    const data = p.goleadoresLocal || p.goleadoresVisitante ? `${p.goleadoresLocal || ""} ${p.goleadoresVisitante || ""}` : "No registrados";
+    return <div style={{fontSize: "0.75rem", marginTop: "5px"}}><span style={{color: "#fbbf24"}}>{label}</span> {data}</div>;
   };
-  const labels = getLabels();
+
+  if (error) return <div style={{color: "#ef4444", padding: "20px", textAlign: "center"}}>⚠️ Error de conexión: {error}</div>;
+  if (loading) return <div style={{color: "#94a3b8", padding: "40px", textAlign: "center", fontSize: "1.2rem"}}>Cargando estadísticas... ⏳</div>;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "25px" }}>
@@ -120,37 +133,29 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
           {calendario.length === 0 ? <p style={emptyText}>No hay encuentros agendados.</p> : 
             calendario.slice(0, 3).map((p, i) => (
               <div key={i} style={rowItem}>
-                <span style={{ fontWeight: "700" }}>{p.local} <span style={{color: "#fbbf24"}}>VS</span> {p.visitante}</span>
+                <span style={{ fontWeight: "700", color: "white" }}>{p.local} <span style={{color: "#fbbf24"}}>VS</span> {p.visitante}</span>
                 <span style={badgeStyle}>{p.fecha} • {p.hora}</span>
               </div>
           ))}
         </div>
       </div>
 
-      {/* SECCIÓN TABLA DE POSICIONES */}
+      {/* SECCIÓN TABLA */}
       <div style={cardStyle}>
         <div style={headerBlue}>🏆 TABLA {deporte.toUpperCase()}</div>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ backgroundColor: "#334155" }}>
-                <th style={thStyle}>CLUB</th>
-                <th style={thStyle}>PJ</th>
-                <th style={thStyle}>{labels.f}</th>
-                <th style={thStyle}>{labels.c}</th>
-                <th style={thStyle}>DG</th>
-                <th style={thStyle}>PTS</th>
+                {["CLUB", "PJ", labels.f, labels.c, "DG", "PTS"].map(h => <th key={h} style={thStyle}>{h}</th>)}
               </tr>
             </thead>
             <tbody>
               {tabla.map((e, i) => (
-                <tr key={i} style={{ borderBottom: "1px solid #334155", backgroundColor: i === 0 ? "#1e293b" : "transparent" }}>
+                <tr key={i} style={{ borderBottom: "1px solid #334155" }}>
                   <td onClick={() => setEquipoSeleccionado(e.nombre)} style={tdTeam}>{i === 0 && "🥇 "}{e.nombre}</td>
-                  <td style={tdCenter}>{e.pj}</td>
-                  <td style={tdCenter}>{e.fav}</td>
-                  <td style={tdCenter}>{e.con}</td>
-                  <td style={tdCenter}>{e.dg}</td>
-                  <td style={tdPoints}>{e.puntos}</td>
+                  <td style={tdCenter}>{e.pj}</td><td style={tdCenter}>{e.fav}</td><td style={tdCenter}>{e.con}</td>
+                  <td style={tdCenter}>{e.dg}</td><td style={tdPoints}>{e.puntos}</td>
                 </tr>
               ))}
             </tbody>
@@ -158,21 +163,21 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
         </div>
       </div>
 
-      {/* SECCIÓN ANOTADORES */}
+      {/* SECCIÓN ANOTADORES / GOLEADORES */}
       <div style={cardStyle}>
-        <div style={headerYellow}>🔥 LÍDERES ({labels.t})</div>
+        <div style={headerYellow}>🔥 LÍDERES ({labels.t.toUpperCase()})</div>
         <div style={{ padding: "15px" }}>
           {goleadores.length === 0 ? <p style={emptyText}>Aún no hay registros.</p> : 
             goleadores.map((g, i) => (
               <div key={i} style={rowItem}>
                 <span style={{color: i === 0 ? "#fbbf24" : "white", fontWeight: "600"}}>{i+1}. {g.nombre}</span>
-                <span style={{fontWeight: "800"}}>{g.goles}</span>
+                <span style={{fontWeight: "900", color: "white"}}>{g.goles}</span>
               </div>
           ))}
         </div>
       </div>
 
-      {/* MODAL DE HISTORIAL */}
+      {/* MODAL DE HISTORIAL DE PARTIDOS Y MVP */}
       {equipoSeleccionado && (
         <div style={modalOverlay} onClick={() => setEquipoSeleccionado(null)}>
           <div style={modalContent} onClick={e => e.stopPropagation()}>
@@ -180,13 +185,15 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
               <h3 style={{color: "#fbbf24", margin: 0}}>{equipoSeleccionado}</h3>
               <button onClick={() => setEquipoSeleccionado(null)} style={btnClose}>✖</button>
             </div>
+            
             {partidos.filter(p => p.local === equipoSeleccionado || p.visitante === equipoSeleccionado).length === 0 ? (
-              <p style={{fontSize: "0.8rem", color: "#94a3b8"}}>No hay partidos jugados todavía.</p>
+              <p style={{fontSize: "0.8rem", color: "#94a3b8", textAlign: "center"}}>No hay partidos jugados todavía.</p>
             ) : (
-              partidos.filter(p => p.local === equipoSeleccionado || p.visitante === equipoSeleccionado).map((p: any, i) => (
+              partidos.filter(p => p.local === equipoSeleccionado || p.visitante === equipoSeleccionado).map((p, i) => (
                 <div key={i} style={historyItem}>
-                  <div style={{fontSize: "0.9rem"}}>{p.local} <b>{p.golesLocal} - {p.golesVisitante}</b> {p.visitante}</div>
-                  <div style={{fontSize: "0.7rem", color: "#94a3b8", marginTop: "5px"}}>MVP: {p.mvp || "---"}</div>
+                  <div style={{fontWeight: "bold", textAlign: "center", color: "white"}}>{p.local} {p.golesLocal} - {p.golesVisitante} {p.visitante}</div>
+                  {renderDetalle(p)}
+                  <div style={{fontSize: "0.75rem", marginTop: "3px"}}><span style={{color: "#fbbf24"}}>⭐ MVP:</span> {p.mvp || "No registrado"}</div>
                 </div>
               ))
             )}
@@ -242,13 +249,13 @@ const headerBlue = { backgroundColor: "#2563eb", color: "white", padding: "15px"
 const headerYellow = { backgroundColor: "#fbbf24", color: "#0f172a", padding: "15px", fontWeight: "900", fontSize: "0.8rem", letterSpacing: "1px" };
 const thStyle = { padding: "12px", textAlign: "left" as const, color: "#94a3b8", fontSize: "0.65rem", textTransform: "uppercase" as const };
 const tdTeam = { padding: "15px 12px", fontWeight: "bold", color: "#3b82f6", cursor: "pointer", textDecoration: "underline" };
-const tdCenter = { textAlign: "center" as const, padding: "15px 12px", fontSize: "0.9rem" };
+const tdCenter = { textAlign: "center" as const, padding: "15px 12px", fontSize: "0.9rem", color: "white" };
 const tdPoints = { textAlign: "center" as const, padding: "15px 12px", fontWeight: "900", color: "#fbbf24", fontSize: "1.2rem" };
 const btnMain = { padding: "20px", borderRadius: "15px", border: "1px solid #334155", backgroundColor: "#1e293b", color: "white", fontWeight: "bold", cursor: "pointer", fontSize: "1.1rem", transition: "0.2s" };
 const emptyText = { textAlign: "center" as const, color: "#64748b", padding: "20px", fontSize: "0.8rem" };
 const rowItem = { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #334155" };
-const badgeStyle = { backgroundColor: "#334155", padding: "5px 10px", borderRadius: "8px", fontSize: "0.7rem", fontWeight: "bold" };
+const badgeStyle = { backgroundColor: "#334155", padding: "5px 10px", borderRadius: "8px", fontSize: "0.7rem", fontWeight: "bold", color: "white" };
 const modalOverlay = { position: "fixed" as const, top:0, left:0, width:"100%", height:"100%", backgroundColor:"rgba(0,0,0,0.85)", display:"flex", justifyContent:"center", alignItems:"center", zIndex:1000 };
-const modalContent = { backgroundColor:"#1e293b", padding:"25px", borderRadius:"24px", width:"90%", maxWidth:"400px", border:"1px solid #fbbf24" };
-const historyItem = { backgroundColor: "#0f172a", padding: "15px", borderRadius: "12px", marginBottom: "10px" };
+const modalContent = { backgroundColor:"#1e293b", padding:"25px", borderRadius:"24px", width:"90%", maxWidth:"400px", border:"1px solid #fbbf24", maxHeight: "80vh", overflowY: "auto" as const };
+const historyItem = { backgroundColor: "#0f172a", padding: "15px", borderRadius: "12px", marginBottom: "10px", border: "1px solid #334155" };
 const btnClose = { background:"none", border:"none", color:"white", fontSize:"1.2rem", cursor:"pointer" };
