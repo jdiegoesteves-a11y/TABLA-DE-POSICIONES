@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { db } from "../lib/firebase";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 
 export default function Tabla() {
   const [tabla, setTabla] = useState<any[]>([]);
   const [partidos, setPartidos] = useState<any[]>([]);
+  const [calendario, setCalendario] = useState<any[]>([]); // Estado para partidos programados
   const [goleadores, setGoleadores] = useState<{ nombre: string; goles: number }[]>([]);
   const [equipoSeleccionado, setEquipoSeleccionado] = useState<string | null>(null);
 
@@ -27,7 +28,6 @@ export default function Tabla() {
         tablaTemp[p.local].gf += gL; tablaTemp[p.local].gc += gV;
         tablaTemp[p.visitante].gf += gV; tablaTemp[p.visitante].gc += gL;
         
-        // Cálculo correcto de DG
         tablaTemp[p.local].dg = tablaTemp[p.local].gf - tablaTemp[p.local].gc;
         tablaTemp[p.visitante].dg = tablaTemp[p.visitante].gf - tablaTemp[p.visitante].gc;
 
@@ -49,7 +49,6 @@ export default function Tabla() {
       procesarGoles(p.goleadoresVisitante || "");
     });
     
-    // Ordenar: Puntos -> DG -> GF
     setTabla(Object.values(tablaTemp).sort((a: any, b: any) => b.puntos - a.puntos || b.dg - a.dg || b.gf - a.gf));
     setGoleadores(Object.entries(contadorGoles).map(([nombre, goles]) => ({ nombre, goles })).sort((a, b) => b.goles - a.goles).slice(0, 10));
   };
@@ -57,13 +56,27 @@ export default function Tabla() {
   useEffect(() => {
     let equiposData: any[] = [];
     let partidosData: any[] = [];
-    const unsubE = onSnapshot(collection(db, "equipos"), (s) => { equiposData = s.docs; calcularEstadisticas(equiposData, partidosData); });
+    
+    // Suscripción a Equipos
+    const unsubE = onSnapshot(collection(db, "equipos"), (s) => { 
+      equiposData = s.docs; 
+      calcularEstadisticas(equiposData, partidosData); 
+    });
+
+    // Suscripción a Partidos Jugados
     const unsubP = onSnapshot(collection(db, "partidos"), (s) => { 
       setPartidos(s.docs.map(d => ({id: d.id, ...d.data()}))); 
       partidosData = s.docs;
       calcularEstadisticas(equiposData, partidosData); 
     });
-    return () => { unsubE(); unsubP(); };
+
+    // Suscripción a Calendario (Próximos Partidos)
+    const qCalendario = query(collection(db, "calendario"), orderBy("fecha", "asc"));
+    const unsubC = onSnapshot(qCalendario, (s) => {
+      setCalendario(s.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    return () => { unsubE(); unsubP(); unsubC(); };
   }, []);
 
   return (
@@ -72,7 +85,26 @@ export default function Tabla() {
 
       <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "1000px", margin: "0 auto" }}>
         
-        {/* TABLA */}
+        {/* SECCIÓN PRÓXIMOS PARTIDOS */}
+        <div style={{ backgroundColor: "#FFFFFF", borderRadius: "12px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)", overflow: "hidden" }}>
+          <div style={{ backgroundColor: "#0F172A", color: "#FBBF24", padding: "12px", fontWeight: "bold" }}>📅 PRÓXIMOS PARTIDOS</div>
+          <div style={{ padding: "10px" }}>
+            {calendario.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "10px", color: "#64748b", fontSize: "0.85rem" }}>No hay partidos programados</div>
+            ) : (
+              calendario.map((p, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i === calendario.length - 1 ? "none" : "1px solid #f1f5f9", fontSize: "0.85rem" }}>
+                  <div style={{ flex: 1, fontWeight: "600", color: "#1E293B" }}>{p.local} <span style={{color: "#94a3b8"}}>vs</span> {p.visitante}</div>
+                  <div style={{ textAlign: "right", color: "#475569", fontWeight: "500" }}>
+                    <span style={{ backgroundColor: "#F1F5F9", padding: "2px 6px", borderRadius: "4px" }}>{p.fecha} {p.hora && `| ${p.hora}`}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* TABLA DE POSICIONES */}
         <div style={{ backgroundColor: "#FFFFFF", borderRadius: "12px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)", overflowX: "auto" }}>
           <div style={{ backgroundColor: "#0F172A", color: "#FFFFFF", padding: "12px", fontWeight: "bold" }}>Tabla de Posiciones</div>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
