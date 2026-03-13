@@ -9,101 +9,80 @@ export default function CalendarioPro() {
   const [eventos, setEventos] = useState<any[]>([]);
   const [cargando, setCargando] = useState(false);
   const [config, setConfig] = useState({ genero: "Varones", deporte: "Futbol", categoria: "Inferior" });
+  
+  // Incluimos hora en el estado del formulario
   const [nuevoPartido, setNuevoPartido] = useState({ local: "", visitante: "", fecha: "", hora: "" });
 
-  // 1. Cargar equipos filtrados
   useEffect(() => {
-    const qE = query(
-      collection(db, "equipos"),
-      where("genero", "==", config.genero),
-      where("deporte", "==", config.deporte),
-      where("categoria", "==", config.categoria)
+    const qE = query(collection(db, "equipos"), 
+      where("genero", "==", config.genero), where("deporte", "==", config.deporte), where("categoria", "==", config.categoria)
     );
     return onSnapshot(qE, (s) => setEquipos(s.docs.map(d => d.data().nombre)));
   }, [config]);
 
-  // 2. Cargar calendario filtrado
   useEffect(() => {
-    const qC = query(
-      collection(db, "calendario"),
-      where("genero", "==", config.genero),
-      where("deporte", "==", config.deporte),
-      where("categoria", "==", config.categoria),
+    const qC = query(collection(db, "calendario"), 
+      where("genero", "==", config.genero), where("deporte", "==", config.deporte), where("categoria", "==", config.categoria),
       orderBy("fecha", "asc")
     );
-    
-    return onSnapshot(qC, (s) => {
-      const data = s.docs.map(d => ({ id: d.id, ...d.data() }));
-      setEventos(data);
-    }, (err) => console.error("Error al leer:", err));
+    return onSnapshot(qC, (s) => setEventos(s.docs.map(d => ({ id: d.id, ...d.data() }))));
   }, [config]);
 
-  // 3. Función de Guardado (ELIMINAMOS EL ERROR DE ESCRITURA)
   const agendar = async () => {
-    if (!nuevoPartido.local || !nuevoPartido.visitante || !nuevoPartido.fecha) {
-      alert("Por favor, selecciona Local, Visitante y Fecha.");
+    if (!nuevoPartido.local || !nuevoPartido.visitante || !nuevoPartido.fecha || !nuevoPartido.hora) {
+      alert("Por favor, completa Local, Visitante, Fecha y HORA.");
       return;
     }
     setCargando(true);
-    try {
-      await addDoc(collection(db, "calendario"), {
-        local: nuevoPartido.local,
-        visitante: nuevoPartido.visitante,
-        fecha: nuevoPartido.fecha,
-        hora: nuevoPartido.hora,
-        genero: config.genero,
-        deporte: config.deporte,
-        categoria: config.categoria
-      });
-      alert("✅ Partido guardado en: " + config.categoria);
-      setNuevoPartido({ local: "", visitante: "", fecha: "", hora: "" });
-    } catch (e) {
-      alert("Error al guardar: " + e);
-    }
+    await addDoc(collection(db, "calendario"), { ...nuevoPartido, ...config });
+    setNuevoPartido({ local: "", visitante: "", fecha: "", hora: "" });
     setCargando(false);
-  };
-
-  const eliminar = async (id: string) => {
-    await deleteDoc(doc(db, "calendario", id));
   };
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#0f172a", color: "#f8fafc", padding: "20px", fontFamily: "sans-serif" }}>
       <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-        <h1 style={{ textAlign: "center", color: "#fbbf24" }}>📅 GESTIÓN CALENDARIO</h1>
+        <h1 style={{ textAlign: "center", color: "#fbbf24" }}>📅 PROGRAMACIÓN</h1>
 
-        {/* SELECTORES DE FILTRO */}
+        {/* SELECTORES */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "20px" }}>
-          {["genero", "deporte", "categoria"].map((key) => (
-            <select key={key} style={inputStyle} value={config[key as keyof typeof config]} 
-              onChange={(e) => setConfig({...config, [key]: e.target.value})}>
-              {key === "genero" && ["Varones", "Damas"].map(o => <option key={o} value={o}>{o}</option>)}
-              {key === "deporte" && ["Futbol", "Volley", "Basket"].map(o => <option key={o} value={o}>{o}</option>)}
-              {key === "categoria" && ["Inferior", "Intermedia", "Superior"].map(o => <option key={o} value={o}>{o}</option>)}
+          <select style={inputStyle} value={config.genero} onChange={(e) => setConfig({...config, genero: e.target.value})}>
+            <option value="Varones">Varones</option><option value="Damas">Damas</option>
+          </select>
+          <select style={inputStyle} value={config.deporte} onChange={(e) => setConfig({...config, deporte: e.target.value})}>
+            <option value="Futbol">Futbol</option><option value="Volley">Volley</option><option value="Basket">Basket</option>
+          </select>
+          <select style={inputStyle} value={config.categoria} onChange={(e) => setConfig({...config, categoria: e.target.value})}>
+            <option value="Inferior">Inferior</option><option value="Intermedia">Intermedia</option><option value="Superior">Superior</option>
+          </select>
+        </div>
+
+        {/* AGENDAR CON HORA */}
+        <div style={{ backgroundColor: "#1e293b", padding: "20px", borderRadius: "10px", border: "1px solid #fbbf24" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            <select style={inputStyle} value={nuevoPartido.local} onChange={(e) => setNuevoPartido({...nuevoPartido, local: e.target.value})}>
+              <option value="">Local</option>{equipos.map(n => <option key={n} value={n}>{n}</option>)}
             </select>
-          ))}
+            <select style={inputStyle} value={nuevoPartido.visitante} onChange={(e) => setNuevoPartido({...nuevoPartido, visitante: e.target.value})}>
+              <option value="">Visitante</option>{equipos.map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            <input type="date" style={inputStyle} value={nuevoPartido.fecha} onChange={(e) => setNuevoPartido({...nuevoPartido, fecha: e.target.value})} />
+            <input type="time" style={inputStyle} value={nuevoPartido.hora} onChange={(e) => setNuevoPartido({...nuevoPartido, hora: e.target.value})} />
+          </div>
+          <button onClick={agendar} style={btnStyle}>AGENDAR PARTIDO</button>
         </div>
 
-        {/* AGENDAR */}
-        <div style={{ backgroundColor: "#1e293b", padding: "20px", borderRadius: "10px" }}>
-          <select style={inputStyle} value={nuevoPartido.local} onChange={(e) => setNuevoPartido({...nuevoPartido, local: e.target.value})}>
-            <option value="">Equipo Local</option>
-            {equipos.map(n => <option key={n} value={n}>{n}</option>)}
-          </select>
-          <select style={inputStyle} value={nuevoPartido.visitante} onChange={(e) => setNuevoPartido({...nuevoPartido, visitante: e.target.value})}>
-            <option value="">Equipo Visitante</option>
-            {equipos.map(n => <option key={n} value={n}>{n}</option>)}
-          </select>
-          <input type="date" style={inputStyle} value={nuevoPartido.fecha} onChange={(e) => setNuevoPartido({...nuevoPartido, fecha: e.target.value})} />
-          <button onClick={agendar} style={btnStyle} disabled={cargando}>{cargando ? "Guardando..." : "AGENDAR"}</button>
-        </div>
-
-        {/* LISTA */}
+        {/* LISTA CON HORA */}
         <div style={{ marginTop: "20px" }}>
           {eventos.map(ev => (
-            <div key={ev.id} style={{ display: "flex", justifyContent: "space-between", padding: "15px", backgroundColor: "#1e293b", borderRadius: "8px", marginBottom: "5px" }}>
-              <span>{ev.local} vs {ev.visitante} ({ev.fecha})</span>
-              <button onClick={() => eliminar(ev.id)} style={{color: "#ff4444", background: "none", border: "none"}}>Eliminar</button>
+            <div key={ev.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "15px", backgroundColor: "#1e293b", borderRadius: "8px", marginBottom: "5px" }}>
+              <div>
+                <div style={{ fontWeight: "bold" }}>{ev.local} vs {ev.visitante}</div>
+                <div style={{ fontSize: "0.8rem", color: "#fbbf24" }}>{ev.fecha} a las {ev.hora} hs</div>
+              </div>
+              <button onClick={() => deleteDoc(doc(db, "calendario", ev.id))} style={{color: "#ff4444", background: "none", border: "none", cursor: "pointer"}}>Eliminar</button>
             </div>
           ))}
         </div>
@@ -112,5 +91,5 @@ export default function CalendarioPro() {
   );
 }
 
-const inputStyle = { width: "100%", padding: "10px", marginBottom: "10px", borderRadius: "5px", border: "1px solid #334155", backgroundColor: "#0f172a", color: "white" };
-const btnStyle = { width: "100%", padding: "15px", backgroundColor: "#fbbf24", border: "none", borderRadius: "5px", fontWeight: "bold", cursor: "pointer" };
+const inputStyle = { width: "100%", padding: "10px", borderRadius: "5px", border: "1px solid #334155", backgroundColor: "#0f172a", color: "white" };
+const btnStyle = { width: "100%", padding: "12px", backgroundColor: "#fbbf24", border: "none", borderRadius: "5px", fontWeight: "bold", cursor: "pointer", marginTop: "10px" };
