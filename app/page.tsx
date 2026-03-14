@@ -227,7 +227,7 @@ export default function Dashboard() {
           <>
             <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px"}}>
               <span style={{fontSize: "0.8rem", color: "#94a3b8"}}>{sel.deporte} • {sel.genero} • {sel.categoria}</span>
-              <button onClick={() => setStep(1)} style={{color: "#fbbf24", background: "none", border: "none", cursor: "pointer", fontWeight: "bold"}}>CAMBIAR TODO</button>
+              <button onClick={() => setStep(1)} style={{color: "#fbbf24", background: "none", border: "none", cursor: "pointer", fontWeight: "bold"}}>MENÚ INICIAL</button>
             </div>
             <VistaDeportiva {...sel} />
           </>
