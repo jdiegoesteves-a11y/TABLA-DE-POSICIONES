@@ -5,6 +5,10 @@ import { db } from "../../lib/firebase";
 import { collection, addDoc, query, where, onSnapshot, deleteDoc, doc, orderBy } from "firebase/firestore";
 
 export default function RegistrarPartido() {
+  // Estado para la protección
+  const [autenticado, setAutenticado] = useState(false);
+  const [claveInput, setClaveInput] = useState("");
+
   const [config, setConfig] = useState({ genero: "Varones", deporte: "Futbol", categoria: "Inferior" });
   const [equipos, setEquipos] = useState<string[]>([]);
   const [partidos, setPartidos] = useState<any[]>([]);
@@ -16,8 +20,16 @@ export default function RegistrarPartido() {
   });
   const [cargando, setCargando] = useState(false);
 
-  // Carga de datos con escucha en tiempo real
+  const intentarAcceso = () => {
+    if (claveInput === "COPOL2026*") {
+      setAutenticado(true);
+    } else {
+      alert("Contraseña incorrecta");
+    }
+  };
+
   useEffect(() => {
+    if (!autenticado) return;
     const qEquipos = query(collection(db, "equipos"), where("genero", "==", config.genero), where("deporte", "==", config.deporte), where("categoria", "==", config.categoria));
     const unsubEquipos = onSnapshot(qEquipos, (s) => setEquipos(s.docs.map(d => d.data().nombre)));
 
@@ -25,7 +37,7 @@ export default function RegistrarPartido() {
     const unsubPartidos = onSnapshot(qPartidos, (s) => setPartidos(s.docs.map(d => ({ id: d.id, ...d.data() }))));
 
     return () => { unsubEquipos(); unsubPartidos(); };
-  }, [config]);
+  }, [config, autenticado]);
 
   const guardar = async () => {
     if (!partido.local || !partido.visitante) { alert("Selecciona ambos equipos"); return; }
@@ -43,19 +55,37 @@ export default function RegistrarPartido() {
     }
   };
 
+  // PANTALLA DE LOGIN
+  if (!autenticado) {
+    return (
+      <div style={{ minHeight: "100vh", backgroundColor: "#0f172a", display: "flex", justifyContent: "center", alignItems: "center", padding: "20px" }}>
+        <div style={{ backgroundColor: "#1e293b", padding: "40px", borderRadius: "20px", textAlign: "center", border: "1px solid #fbbf24", maxWidth: "400px", width: "100%" }}>
+          <h2 style={{ color: "white", marginBottom: "20px" }}>🏆 Registro de Partidos</h2>
+          <input 
+            type="password" 
+            placeholder="Contraseña" 
+            value={claveInput}
+            onChange={(e) => setClaveInput(e.target.value)}
+            style={inputStyle}
+          />
+          <button onClick={intentarAcceso} style={btnGold}>INGRESAR</button>
+        </div>
+      </div>
+    );
+  }
+
+  // CONTENIDO PROTEGIDO
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#0f172a", color: "#f8fafc", padding: "20px", fontFamily: "'Inter', sans-serif" }}>
       <div style={{ maxWidth: "500px", margin: "0 auto" }}>
         <h1 style={{ color: "#fbbf24", textAlign: "center", marginBottom: "20px" }}>🏆 REGISTRO DE PARTIDOS</h1>
         
-        {/* FILTROS */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "20px" }}>
            <select style={selectStyle} onChange={(e) => setConfig({...config, genero: e.target.value})}>{["Varones", "Damas"].map(o => <option key={o} value={o}>{o}</option>)}</select>
            <select style={selectStyle} onChange={(e) => setConfig({...config, deporte: e.target.value})}>{["Futbol", "Volley", "Basket"].map(o => <option key={o} value={o}>{o}</option>)}</select>
            <select style={selectStyle} onChange={(e) => setConfig({...config, categoria: e.target.value})}>{["Inferior", "Intermedia", "Superior"].map(o => <option key={o} value={o}>{o}</option>)}</select>
         </div>
 
-        {/* FORMULARIO PROFESIONAL */}
         <div style={cardStyle}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: "15px", marginBottom: "20px" }}>
             <div style={{ textAlign: "center" }}>
@@ -80,9 +110,7 @@ export default function RegistrarPartido() {
           <button onClick={guardar} disabled={cargando} style={btnGold}>{cargando ? "Guardando..." : "PUBLICAR RESULTADO"}</button>
         </div>
 
-        {/* LISTADO DE RESULTADOS */}
         <h2 style={{marginTop: "40px", color: "#fbbf24"}}>Historial de Partidos</h2>
-        
         {partidos.map(p => (
           <div key={p.id} style={{...cardStyle, marginBottom: "10px", padding: "15px", display: "flex", justifyContent: "space-between", alignItems: "center"}}>
             <div>
@@ -97,7 +125,6 @@ export default function RegistrarPartido() {
   );
 }
 
-// Estilos globales del módulo
 const cardStyle = { backgroundColor: "#1e293b", padding: "20px", borderRadius: "16px", border: "1px solid #334155" };
 const selectStyle = { padding: "10px", borderRadius: "8px", background: "#0f172a", color: "white", border: "1px solid #475569", width: "100%", marginTop: "5px" };
 const inputStyle = { padding: "12px", borderRadius: "8px", background: "#0f172a", color: "white", border: "1px solid #475569", width: "100%" };
