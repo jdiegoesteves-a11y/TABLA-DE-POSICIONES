@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { db } from "../lib/firebase";
 import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
+import Link from "next/link"; // Importado para la navegación
 
 // --- COMPONENTE DE VISTA DEPORTIVA ---
 function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deporte: string, categoria: string }) {
@@ -12,7 +13,6 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
   const [goleadores, setGoleadores] = useState<{ nombre: string; goles: number }[]>([]);
   const [equipoSeleccionado, setEquipoSeleccionado] = useState<string | null>(null);
   
-  // Estados de seguridad para evitar la pantalla negra
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,18 +39,15 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
       let equiposActuales: any[] = [];
       let partidosActuales: any[] = [];
 
-      // Función unificada para calcular tabla y goleadores sin saturar React
       const procesarDatos = (equipos: any[], partidosArr: any[]) => {
         const tablaTemp: any = {};
         const contadorGoles: { [key: string]: number } = {};
 
-        // 1. Inicializar equipos
         equipos.filter((e: any) => e.deporte === deporte && e.genero === genero && e.categoria === categoria)
           .forEach((e: any) => {
             tablaTemp[e.nombre] = { nombre: e.nombre, puntos: 0, pj: 0, fav: 0, con: 0, dg: 0 };
           });
 
-        // 2. Procesar partidos
         partidosArr.forEach((p: any) => {
           if (tablaTemp[p.local] && tablaTemp[p.visitante]) {
             const valL = Number(p.golesLocal || 0);
@@ -68,7 +65,6 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
             else { tablaTemp[p.local].puntos += 1; tablaTemp[p.visitante].puntos += 1; }
           }
 
-          // 3. Procesar Goleadores / Anotadores
           const procesarAnotadores = (texto: string) => {
             if (!texto) return;
             texto.split(",").forEach(item => {
@@ -86,7 +82,6 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
         setGoleadores(Object.entries(contadorGoles).map(([nombre, goles]) => ({ nombre, goles })).sort((a, b) => b.goles - a.goles).slice(0, 8));
       };
 
-      // Listeners de Firebase
       const unsubE = onSnapshot(qEquipos, (sEquipos) => {
         equiposActuales = sEquipos.docs.map(d => d.data());
         procesarDatos(equiposActuales, partidosActuales);
@@ -134,7 +129,7 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
             calendario.slice(0, 3).map((p, i) => (
               <div key={i} style={rowItem}>
                 <span style={{ fontWeight: "700", color: "white" }}>{p.local} <span style={{color: "#fbbf24"}}>VS</span> {p.visitante}</span>
-                <span style={badgeStyle}>{p.fecha} • {p.hora}</span>
+                <span style={badgeStyle}>📅 {p.fecha} • 🕒 {p.hora}</span>
               </div>
           ))}
         </div>
@@ -163,7 +158,7 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
         </div>
       </div>
 
-      {/* SECCIÓN ANOTADORES / GOLEADORES */}
+      {/* SECCIÓN ANOTADORES */}
       <div style={cardStyle}>
         <div style={headerYellow}>🔥 LÍDERES ({labels.t.toUpperCase()})</div>
         <div style={{ padding: "15px" }}>
@@ -177,7 +172,7 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
         </div>
       </div>
 
-      {/* MODAL DE HISTORIAL DE PARTIDOS Y MVP */}
+      {/* MODAL */}
       {equipoSeleccionado && (
         <div style={modalOverlay} onClick={() => setEquipoSeleccionado(null)}>
           <div style={modalContent} onClick={e => e.stopPropagation()}>
@@ -185,7 +180,6 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
               <h3 style={{color: "#fbbf24", margin: 0}}>{equipoSeleccionado}</h3>
               <button onClick={() => setEquipoSeleccionado(null)} style={btnClose}>✖</button>
             </div>
-            
             {partidos.filter(p => p.local === equipoSeleccionado || p.visitante === equipoSeleccionado).length === 0 ? (
               <p style={{fontSize: "0.8rem", color: "#94a3b8", textAlign: "center"}}>No hay partidos jugados todavía.</p>
             ) : (
@@ -212,8 +206,28 @@ export default function Dashboard() {
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#0f172a", color: "#f8fafc", fontFamily: "'Inter', sans-serif", padding: "20px" }}>
       <div style={{ maxWidth: "500px", margin: "0 auto" }}>
+        
+        {/* BOTÓN ADMIN SUPERIOR */}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "10px" }}>
+          <Link href="/Calendarios">
+            <button style={{
+              backgroundColor: "transparent",
+              border: "1px solid #334155",
+              color: "#94a3b8",
+              padding: "5px 15px",
+              borderRadius: "8px",
+              fontSize: "0.7rem",
+              fontWeight: "bold",
+              cursor: "pointer",
+              transition: "0.3s"
+            }}>
+              ⚙️ ADMIN 
+            </button>
+          </Link>
+        </div>
+
         <h1 style={{ textAlign: "center", fontWeight: "900", fontSize: "2rem", marginBottom: "30px", letterSpacing: "-1px" }}>
-          TOP<span style={{color: "#fbbf24"}}>SCORE</span>
+          COPOL<span style={{color: "#4ffb24"}}>SCORE</span>
         </h1>
 
         {step < 4 ? (
