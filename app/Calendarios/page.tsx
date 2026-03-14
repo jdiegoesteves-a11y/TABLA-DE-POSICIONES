@@ -102,7 +102,7 @@ function EquiposComponent() {
   );
 }
 
-// --- SUB-COMPONENTE PARTIDOS ---
+// --- SUB-COMPONENTE PARTIDOS (CORREGIDO) ---
 function PartidosComponent() {
   const [config, setConfig] = useState({ genero: "Varones", deporte: "Futbol", categoria: "Inferior" });
   const [equipos, setEquipos] = useState<string[]>([]);
@@ -117,7 +117,14 @@ function PartidosComponent() {
   }, [config]);
 
   const guardar = async () => {
-    await addDoc(collection(db, "partidos"), { ...partido, ...config, fecha: new Date().toISOString() });
+    if (!partido.local || !partido.visitante) return alert("Selecciona los equipos");
+    await addDoc(collection(db, "partidos"), { 
+        ...partido, 
+        ...config, 
+        golesLocal: Number(partido.golesLocal || 0),
+        golesVisitante: Number(partido.golesVisitante || 0),
+        fecha: new Date().toISOString() 
+    });
     setPartido({ local: "", visitante: "", golesLocal: "", golesVisitante: "", goleadoresLocal: "", goleadoresVisitante: "", mvp: "" });
   };
 
@@ -139,20 +146,20 @@ function PartidosComponent() {
            <input type="number" placeholder="L" style={{...inputStyle, width: "60px", backgroundColor: "#fbbf24", color: "black", fontSize: "1.2rem", fontWeight: "bold", textAlign: "center"}} value={partido.golesLocal} onChange={(e) => setPartido({...partido, golesLocal: e.target.value})}/>
            <input type="number" placeholder="V" style={{...inputStyle, width: "60px", backgroundColor: "#fbbf24", color: "black", fontSize: "1.2rem", fontWeight: "bold", textAlign: "center"}} value={partido.golesVisitante} onChange={(e) => setPartido({...partido, golesVisitante: e.target.value})}/>
         </div>
-        <input style={inputStyle} placeholder="Goleadores Local" value={partido.goleadoresLocal} onChange={(e) => setPartido({...partido, golesLocal: e.target.value})} />
-        <input style={inputStyle} placeholder="Goleadores Visitante" value={partido.goleadoresVisitante} onChange={(e) => setPartido({...partido, golesVisitante: e.target.value})} />
+        <input style={inputStyle} placeholder="Goleadores Local (Ej: Juan(2), Pedro)" value={partido.goleadoresLocal} onChange={(e) => setPartido({...partido, goleadoresLocal: e.target.value})} />
+        <input style={inputStyle} placeholder="Goleadores Visitante" value={partido.goleadoresVisitante} onChange={(e) => setPartido({...partido, goleadoresVisitante: e.target.value})} />
         <input style={inputStyle} placeholder="MVP" value={partido.mvp} onChange={(e) => setPartido({...partido, mvp: e.target.value})} />
         <button onClick={guardar} style={btnStyle}>PUBLICAR</button>
       </div>
-      {/* Historial de Partidos */}
       <div style={{marginTop: "20px"}}>
         {partidos.map(p => (
            <div key={p.id} style={{...cardStyle, marginBottom: "10px", display: "flex", justifyContent: "space-between", alignItems: "center"}}>
-              <div>
-                <div style={{fontWeight: "bold"}}>{p.local} <span style={{color: "#fbbf24"}}>{p.golesLocal} - {p.golesVisitante}</span> {p.visitante}</div>
-                <div style={{fontSize: "0.8rem", color: "#94a3b8"}}>MVP: {p.mvp || "N/A"}</div>
-              </div>
-              <button onClick={() => deleteDoc(doc(db, "partidos", p.id))} style={{color: "#ef4444", border: "none", background: "none", cursor: "pointer", fontWeight: "bold"}}>Borrar</button>
+             <div>
+               <div style={{fontWeight: "bold"}}>{p.local} <span style={{color: "#fbbf24"}}>{p.golesLocal} - {p.golesVisitante}</span> {p.visitante}</div>
+               <div style={{fontSize: "0.8rem", color: "#94a3b8"}}>⚽ {p.goleadoresLocal} {p.goleadoresVisitante}</div>
+               <div style={{fontSize: "0.8rem", color: "#fbbf24"}}>⭐ MVP: {p.mvp || "N/A"}</div>
+             </div>
+             <button onClick={() => deleteDoc(doc(db, "partidos", p.id))} style={{color: "#ef4444", border: "none", background: "none", cursor: "pointer", fontWeight: "bold"}}>Borrar</button>
            </div>
         ))}
       </div>
@@ -160,7 +167,7 @@ function PartidosComponent() {
   );
 }
 
-// --- SUB-COMPONENTE CALENDARIO (ACTUALIZADO CON RELOJ) ---
+// --- SUB-COMPONENTE CALENDARIO ---
 function CalendarioComponent() {
   const [config, setConfig] = useState({ genero: "Varones", deporte: "Futbol", categoria: "Inferior" });
   const [equipos, setEquipos] = useState<any[]>([]);
@@ -194,21 +201,12 @@ function CalendarioComponent() {
           <select style={{...inputStyle, marginBottom: 0}} value={nuevo.visitante} onChange={(e) => setNuevo({...nuevo, visitante: e.target.value})}><option value="">Visitante</option>{equipos.map(n => <option key={n} value={n}>{n}</option>)}</select>
         </div>
         <input type="date" style={inputStyle} value={nuevo.fecha} onChange={(e) => setNuevo({...nuevo, fecha: e.target.value})} />
-        
-        {/* RELOJ VISUAL EN EL INPUT */}
         <div style={{ position: "relative" }}>
           <span style={{ position: "absolute", left: "10px", top: "10px", color: "#fbbf24" }}>🕒</span>
-          <input 
-            type="time" 
-            style={{ ...inputStyle, paddingLeft: "35px" }} 
-            value={nuevo.hora} 
-            onChange={(e) => setNuevo({...nuevo, hora: e.target.value})} 
-          />
+          <input type="time" style={{ ...inputStyle, paddingLeft: "35px" }} value={nuevo.hora} onChange={(e) => setNuevo({...nuevo, hora: e.target.value})} />
         </div>
-
         <button onClick={agendar} style={btnStyle}>AGENDAR PARTIDO</button>
       </div>
-
       <div style={{ marginTop: "20px" }}>
         {eventos.map(ev => (
           <div key={ev.id} style={{ ...cardStyle, marginBottom: "10px", borderLeft: "4px solid #fbbf24" }}>
@@ -220,12 +218,9 @@ function CalendarioComponent() {
                   <span style={badgeStyle}>{ev.categoria}</span>
                 </div>
                 <div style={{ fontWeight: "bold" }}>{ev.local} vs {ev.visitante}</div>
-                {/* RELOJ VISUAL EN EL HISTORIAL */}
                 <div style={{ color: "#94a3b8", fontSize: "0.85rem", display: "flex", gap: "10px", alignItems: "center", marginTop: "4px" }}>
                   <span>📅 {ev.fecha}</span>
-                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                    <span style={{ color: "#fbbf24" }}>🕒</span> {ev.hora}
-                  </span>
+                  <span>🕒 {ev.hora}</span>
                 </div>
               </div>
               <button onClick={() => deleteDoc(doc(db, "calendario", ev.id))} style={{ color: "#ef4444", background: "none", border: "none", cursor: "pointer", fontSize: "1.2rem" }}>✖</button>

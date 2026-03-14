@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { db } from "../lib/firebase";
 import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
-import Link from "next/link"; // Importado para la navegación
+import Link from "next/link"; 
 
 // --- COMPONENTE DE VISTA DEPORTIVA ---
 function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deporte: string, categoria: string }) {
@@ -12,14 +12,12 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
   const [calendario, setCalendario] = useState<any[]>([]);
   const [goleadores, setGoleadores] = useState<{ nombre: string; goles: number }[]>([]);
   const [equipoSeleccionado, setEquipoSeleccionado] = useState<string | null>(null);
-  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
     setError(null);
-
     try {
       const qEquipos = collection(db, "equipos");
       const qPartidos = query(
@@ -52,19 +50,15 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
           if (tablaTemp[p.local] && tablaTemp[p.visitante]) {
             const valL = Number(p.golesLocal || 0);
             const valV = Number(p.golesVisitante || 0);
-            
             tablaTemp[p.local].pj++; tablaTemp[p.visitante].pj++;
             tablaTemp[p.local].fav += valL; tablaTemp[p.local].con += valV;
             tablaTemp[p.visitante].fav += valV; tablaTemp[p.visitante].con += valL;
-            
             tablaTemp[p.local].dg = tablaTemp[p.local].fav - tablaTemp[p.local].con;
             tablaTemp[p.visitante].dg = tablaTemp[p.visitante].fav - tablaTemp[p.visitante].con;
-
             if (valL > valV) tablaTemp[p.local].puntos += 3;
             else if (valL < valV) tablaTemp[p.visitante].puntos += 3;
             else { tablaTemp[p.local].puntos += 1; tablaTemp[p.visitante].puntos += 1; }
           }
-
           const procesarAnotadores = (texto: string) => {
             if (!texto) return;
             texto.split(",").forEach(item => {
@@ -99,7 +93,6 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
       }, (err) => { setError(err.message); });
 
       return () => { unsubE(); unsubP(); unsubC(); };
-
     } catch (e: any) {
       setError(e.message);
       setLoading(false);
@@ -108,20 +101,11 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
 
   const labels = deporte === "Futbol" ? { f: "GF", c: "GC", t: "Goles" } : { f: "PF", c: "PC", t: "Puntos" };
 
-  const renderDetalle = (p: any) => {
-    if (deporte === "Volley") return null;
-    const label = deporte === "Futbol" ? "⚽ Goles: " : "⭐ Puntos: ";
-    const data = p.goleadoresLocal || p.goleadoresVisitante ? `${p.goleadoresLocal || ""} ${p.goleadoresVisitante || ""}` : "No registrados";
-    return <div style={{fontSize: "0.75rem", marginTop: "5px"}}><span style={{color: "#fbbf24"}}>{label}</span> {data}</div>;
-  };
-
   if (error) return <div style={{color: "#ef4444", padding: "20px", textAlign: "center"}}>⚠️ Error de conexión: {error}</div>;
   if (loading) return <div style={{color: "#94a3b8", padding: "40px", textAlign: "center", fontSize: "1.2rem"}}>Cargando estadísticas... ⏳</div>;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "25px" }}>
-      
-      {/* SECCIÓN CALENDARIO */}
       <div style={cardStyle}>
         <div style={headerYellow}>📅 PRÓXIMOS PARTIDOS</div>
         <div style={{ padding: "15px" }}>
@@ -135,7 +119,6 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
         </div>
       </div>
 
-      {/* SECCIÓN TABLA */}
       <div style={cardStyle}>
         <div style={headerBlue}>🏆 TABLA {deporte.toUpperCase()}</div>
         <div style={{ overflowX: "auto" }}>
@@ -158,7 +141,6 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
         </div>
       </div>
 
-      {/* SECCIÓN ANOTADORES */}
       <div style={cardStyle}>
         <div style={headerYellow}>🔥 LÍDERES ({labels.t.toUpperCase()})</div>
         <div style={{ padding: "15px" }}>
@@ -172,7 +154,6 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
         </div>
       </div>
 
-      {/* MODAL */}
       {equipoSeleccionado && (
         <div style={modalOverlay} onClick={() => setEquipoSeleccionado(null)}>
           <div style={modalContent} onClick={e => e.stopPropagation()}>
@@ -180,17 +161,17 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
               <h3 style={{color: "#fbbf24", margin: 0}}>{equipoSeleccionado}</h3>
               <button onClick={() => setEquipoSeleccionado(null)} style={btnClose}>✖</button>
             </div>
-            {partidos.filter(p => p.local === equipoSeleccionado || p.visitante === equipoSeleccionado).length === 0 ? (
-              <p style={{fontSize: "0.8rem", color: "#94a3b8", textAlign: "center"}}>No hay partidos jugados todavía.</p>
-            ) : (
-              partidos.filter(p => p.local === equipoSeleccionado || p.visitante === equipoSeleccionado).map((p, i) => (
-                <div key={i} style={historyItem}>
-                  <div style={{fontWeight: "bold", textAlign: "center", color: "white"}}>{p.local} {p.golesLocal} - {p.golesVisitante} {p.visitante}</div>
-                  {renderDetalle(p)}
-                  <div style={{fontSize: "0.75rem", marginTop: "3px"}}><span style={{color: "#fbbf24"}}>⭐ MVP:</span> {p.mvp || "No registrado"}</div>
+            {partidos.filter(p => p.local === equipoSeleccionado || p.visitante === equipoSeleccionado).map((p, i) => (
+              <div key={i} style={historyItem}>
+                <div style={{fontWeight: "bold", textAlign: "center", color: "white"}}>{p.local} {p.golesLocal} - {p.golesVisitante} {p.visitante}</div>
+                {/* CAMPO DE TEXTO DE QUIENES METIERON GOL */}
+                <div style={{fontSize: "0.75rem", marginTop: "8px", color: "#94a3b8"}}>
+                  <span style={{color: "#4ffb24"}}>⚽ Goles: </span>
+                  {`${p.goleadoresLocal || ""} ${p.goleadoresVisitante || ""}`.trim() || "No registrados"}
                 </div>
-              ))
-            )}
+                <div style={{fontSize: "0.75rem", marginTop: "3px"}}><span style={{color: "#fbbf24"}}>⭐ MVP:</span> {p.mvp || "No registrado"}</div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -198,7 +179,7 @@ function VistaDeportiva({ genero, deporte, categoria }: { genero: string, deport
   );
 }
 
-// --- DASHBOARD PRINCIPAL (SELECTORES) ---
+// --- DASHBOARD PRINCIPAL CON BOTÓN RETROCEDER ---
 export default function Dashboard() {
   const [step, setStep] = useState(1);
   const [sel, setSel] = useState({ genero: "", deporte: "", categoria: "" });
@@ -207,22 +188,9 @@ export default function Dashboard() {
     <div style={{ minHeight: "100vh", backgroundColor: "#0f172a", color: "#f8fafc", fontFamily: "'Inter', sans-serif", padding: "20px" }}>
       <div style={{ maxWidth: "500px", margin: "0 auto" }}>
         
-        {/* BOTÓN ADMIN SUPERIOR */}
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "10px" }}>
           <Link href="/Calendarios">
-            <button style={{
-              backgroundColor: "transparent",
-              border: "1px solid #334155",
-              color: "#94a3b8",
-              padding: "5px 15px",
-              borderRadius: "8px",
-              fontSize: "0.7rem",
-              fontWeight: "bold",
-              cursor: "pointer",
-              transition: "0.3s"
-            }}>
-              ⚙️ ADMIN 
-            </button>
+            <button style={btnAdmin}>⚙️ ADMIN</button>
           </Link>
         </div>
 
@@ -232,7 +200,19 @@ export default function Dashboard() {
 
         {step < 4 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-            <div style={{textAlign: "center", color: "#94a3b8", fontSize: "0.8rem", marginBottom: "10px"}}>PASO {step} DE 3</div>
+            
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+              {step > 1 ? (
+                <button onClick={() => setStep(step - 1)} style={btnBack}>
+                  ← VOLVER
+                </button>
+              ) : <div style={{width: "80px"}}></div>}
+              
+              <div style={{ color: "#94a3b8", fontSize: "0.8rem", fontWeight: "bold" }}>PASO {step} DE 3</div>
+              
+              <div style={{width: "80px"}}></div> 
+            </div>
+
             {step === 1 && ["Varones", "Damas"].map(g => (
               <button key={g} style={btnMain} onClick={() => { setSel({...sel, genero: g}); setStep(2); }}>{g}</button>
             ))}
@@ -247,7 +227,7 @@ export default function Dashboard() {
           <>
             <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px"}}>
               <span style={{fontSize: "0.8rem", color: "#94a3b8"}}>{sel.deporte} • {sel.genero} • {sel.categoria}</span>
-              <button onClick={() => setStep(1)} style={{color: "#fbbf24", background: "none", border: "none", cursor: "pointer", fontWeight: "bold"}}>CAMBIAR</button>
+              <button onClick={() => setStep(1)} style={{color: "#fbbf24", background: "none", border: "none", cursor: "pointer", fontWeight: "bold"}}>CAMBIAR TODO</button>
             </div>
             <VistaDeportiva {...sel} />
           </>
@@ -258,18 +238,20 @@ export default function Dashboard() {
 }
 
 // --- ESTILOS ---
-const cardStyle = { backgroundColor: "#1e293b", borderRadius: "20px", overflow: "hidden", border: "1px solid #334155", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" };
-const headerBlue = { backgroundColor: "#2563eb", color: "white", padding: "15px", fontWeight: "900", fontSize: "0.8rem", letterSpacing: "1px" };
-const headerYellow = { backgroundColor: "#fbbf24", color: "#0f172a", padding: "15px", fontWeight: "900", fontSize: "0.8rem", letterSpacing: "1px" };
-const thStyle = { padding: "12px", textAlign: "left" as const, color: "#94a3b8", fontSize: "0.65rem", textTransform: "uppercase" as const };
-const tdTeam = { padding: "15px 12px", fontWeight: "bold", color: "#3b82f6", cursor: "pointer", textDecoration: "underline" };
-const tdCenter = { textAlign: "center" as const, padding: "15px 12px", fontSize: "0.9rem", color: "white" };
-const tdPoints = { textAlign: "center" as const, padding: "15px 12px", fontWeight: "900", color: "#fbbf24", fontSize: "1.2rem" };
-const btnMain = { padding: "20px", borderRadius: "15px", border: "1px solid #334155", backgroundColor: "#1e293b", color: "white", fontWeight: "bold", cursor: "pointer", fontSize: "1.1rem", transition: "0.2s" };
-const emptyText = { textAlign: "center" as const, color: "#64748b", padding: "20px", fontSize: "0.8rem" };
+const btnAdmin = { backgroundColor: "transparent", border: "1px solid #334155", color: "#94a3b8", padding: "5px 15px", borderRadius: "8px", fontSize: "0.7rem", fontWeight: "bold" as const, cursor: "pointer" };
+const btnBack = { backgroundColor: "rgba(51, 65, 85, 0.5)", border: "1px solid #334155", color: "#fbbf24", padding: "4px 10px", borderRadius: "6px", fontSize: "0.65rem", fontWeight: "bold" as const, cursor: "pointer" };
+const btnMain = { padding: "20px", borderRadius: "15px", border: "1px solid #334155", backgroundColor: "#1e293b", color: "white", fontWeight: "bold" as const, cursor: "pointer", fontSize: "1.1rem" };
+const cardStyle = { backgroundColor: "#1e293b", borderRadius: "20px", overflow: "hidden", border: "1px solid #334155" };
+const headerBlue = { backgroundColor: "#2563eb", color: "white", padding: "15px", fontWeight: "900" as const, fontSize: "0.8rem" };
+const headerYellow = { backgroundColor: "#fbbf24", color: "#0f172a", padding: "15px", fontWeight: "900" as const, fontSize: "0.8rem" };
+const thStyle = { padding: "12px", textAlign: "left" as const, color: "#94a3b8", fontSize: "0.65rem" };
+const tdTeam = { padding: "15px 12px", fontWeight: "bold" as const, color: "#3b82f6", cursor: "pointer", textDecoration: "underline" };
+const tdCenter = { textAlign: "center" as const, padding: "15px 12px", color: "white" };
+const tdPoints = { textAlign: "center" as const, padding: "15px 12px", fontWeight: "900" as const, color: "#fbbf24", fontSize: "1.2rem" };
+const emptyText = { textAlign: "center" as const, color: "#64748b", padding: "20px" };
 const rowItem = { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #334155" };
-const badgeStyle = { backgroundColor: "#334155", padding: "5px 10px", borderRadius: "8px", fontSize: "0.7rem", fontWeight: "bold", color: "white" };
+const badgeStyle = { backgroundColor: "#334155", padding: "5px 10px", borderRadius: "8px", fontSize: "0.7rem", color: "white" };
 const modalOverlay = { position: "fixed" as const, top:0, left:0, width:"100%", height:"100%", backgroundColor:"rgba(0,0,0,0.85)", display:"flex", justifyContent:"center", alignItems:"center", zIndex:1000 };
-const modalContent = { backgroundColor:"#1e293b", padding:"25px", borderRadius:"24px", width:"90%", maxWidth:"400px", border:"1px solid #fbbf24", maxHeight: "80vh", overflowY: "auto" as const };
-const historyItem = { backgroundColor: "#0f172a", padding: "15px", borderRadius: "12px", marginBottom: "10px", border: "1px solid #334155" };
+const modalContent = { backgroundColor:"#1e293b", padding:"25px", borderRadius:"24px", width:"90%", maxWidth:"400px", border:"1px solid #fbbf24" };
+const historyItem = { backgroundColor: "#0f172a", padding: "15px", borderRadius: "12px", marginBottom: "10px" };
 const btnClose = { background:"none", border:"none", color:"white", fontSize:"1.2rem", cursor:"pointer" };
