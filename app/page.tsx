@@ -265,6 +265,9 @@ export default function Dashboard() {
           </div>
         )}
       </main>
+      <footer style={copyrightStyle}>
+        © {new Date().getFullYear()} Juan Diego Esteves mendoza. Todos los derechos reservados.
+      </footer>
     </div>
   );
 }
@@ -319,3 +322,4 @@ const modalHeaderStyle = { display: 'flex', justifyContent: 'space-between', ali
 const closeBtnStyle = { background: '#334155', border: 'none', color: '#fff', borderRadius: '50%', width: '35px', height: '35px', cursor: 'pointer' };
 const historyMatchStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', borderBottom: '1px solid #334155' };
 const historyScoreStyle = { background: '#0f172a', padding: '8px 20px', borderRadius: '12px', fontWeight: '900', color: '#4ffb24' };
+const copyrightStyle = { textAlign: 'center' as const, fontSize: '0.75rem', color: '#64748b', padding: '20px 0', marginTop: '20px', opacity: 0.8 };
