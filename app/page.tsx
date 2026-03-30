@@ -15,8 +15,8 @@ interface IGoleador { nombre: string; goles: number; }
 /**
  * COMPONENTE VISTA DEPORTIVA (TABLAS Y CALENDARIO)
  */
-function VistaDeportiva({ genero, deporte, categoria, onBack }: { 
-  genero: string; deporte: string; categoria: string; onBack: () => void 
+function VistaDeportiva({ genero, deporte, categoria, onBack }: {
+  genero: string; deporte: string; categoria: string; onBack: () => void
 }) {
   const [tabla, setTabla] = useState<IEquipo[]>([]);
   const [calendario, setCalendario] = useState<IPartido[]>([]);
@@ -41,7 +41,7 @@ function VistaDeportiva({ genero, deporte, categoria, onBack }: {
 
     const unsubP = onSnapshot(qPartidos, (s) => {
       partidosData = s.docs.map(d => ({ id: d.id, ...d.data() } as IPartido));
-      setTodosLosPartidos(partidosData); 
+      setTodosLosPartidos(partidosData);
       calcularEstadisticas(equiposData, partidosData);
       setLoading(false);
     });
@@ -56,7 +56,7 @@ function VistaDeportiva({ genero, deporte, categoria, onBack }: {
     const contGoles: Record<string, number> = {};
 
     eqs.filter(e => e.deporte === deporte && e.genero === genero && e.categoria === categoria)
-       .forEach(e => tablaTemp[e.nombre] = { nombre: e.nombre, puntos: 0, pj: 0, gf: 0, gc: 0, dg: 0 });
+      .forEach(e => tablaTemp[e.nombre] = { nombre: e.nombre, puntos: 0, pj: 0, gf: 0, gc: 0, dg: 0 });
 
     pts.forEach(p => {
       if (tablaTemp[p.local] && tablaTemp[p.visitante]) {
@@ -66,7 +66,7 @@ function VistaDeportiva({ genero, deporte, categoria, onBack }: {
         tablaTemp[p.visitante].gf += vV; tablaTemp[p.visitante].gc += vL;
         tablaTemp[p.local].dg = tablaTemp[p.local].gf - tablaTemp[p.local].gc;
         tablaTemp[p.visitante].dg = tablaTemp[p.visitante].gf - tablaTemp[p.visitante].gc;
-        
+
         if (vL > vV) tablaTemp[p.local].puntos += 3;
         else if (vL < vV) tablaTemp[p.visitante].puntos += 3;
         else { tablaTemp[p.local].puntos += 1; tablaTemp[p.visitante].puntos += 1; }
@@ -94,18 +94,18 @@ function VistaDeportiva({ genero, deporte, categoria, onBack }: {
       <div style={modalOverlayStyle}>
         <div style={modalContentStyle}>
           <div style={modalHeaderStyle}>
-            <h2>Historial: <span style={{color: '#4ffb24'}}>{equipoSeleccionado}</span></h2>
+            <h2>Historial: <span style={{ color: '#4ffb24' }}>{equipoSeleccionado}</span></h2>
             <button onClick={() => setEquipoSeleccionado(null)} style={closeBtnStyle}>✕</button>
           </div>
-          <div style={{marginTop: '20px'}}>
+          <div style={{ marginTop: '20px' }}>
             {historial.length === 0 ? (
-              <p style={{textAlign: 'center', color: '#94a3b8'}}>No hay partidos registrados aún.</p>
+              <p style={{ textAlign: 'center', color: '#94a3b8' }}>No hay partidos registrados aún.</p>
             ) : (
               historial.map(p => (
                 <div key={p.id} style={historyMatchStyle}>
-                  <div style={{flex: 1, textAlign: 'right', color: p.golesLocal > p.golesVisitante ? '#fff' : '#94a3b8'}}>{p.local}</div>
+                  <div style={{ flex: 1, textAlign: 'right', color: p.golesLocal > p.golesVisitante ? '#fff' : '#94a3b8' }}>{p.local}</div>
                   <div style={historyScoreStyle}>{p.golesLocal} - {p.golesVisitante}</div>
-                  <div style={{flex: 1, textAlign: 'left', color: p.golesVisitante > p.golesLocal ? '#fff' : '#94a3b8'}}>{p.visitante}</div>
+                  <div style={{ flex: 1, textAlign: 'left', color: p.golesVisitante > p.golesLocal ? '#fff' : '#94a3b8' }}>{p.visitante}</div>
                 </div>
               ))
             )}
@@ -120,88 +120,88 @@ function VistaDeportiva({ genero, deporte, categoria, onBack }: {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "25px", position: "relative" }}>
       {renderModalHistorial()}
-      
+
       <section style={highlightCard}>
-        <div style={{textAlign: 'center', marginBottom: '15px'}}>
+        <div style={{ textAlign: 'center', marginBottom: '15px' }}>
           <span style={liveBadge}>📅 CALENDARIO DE JUEGOS</span>
         </div>
-        
+
         {calendario.length > 0 ? (
           <>
             <div style={{ borderBottom: calendario.length > 1 ? '1px solid #334155' : 'none', paddingBottom: calendario.length > 1 ? '20px' : '0', marginBottom: '15px' }}>
-               <div style={{...matchDisplay, gap: '40px'}}>
-                 <span style={{...teamMain, fontSize: '1.8rem'}}>{calendario[0].local}</span>
-                 <span style={{...vsCircle, width: '50px', height: '50px'}}>VS</span>
-                 <span style={{...teamMain, fontSize: '1.8rem'}}>{calendario[0].visitante}</span>
-               </div>
-               <p style={{...timeTag, fontSize: '1.1rem', fontWeight: 'bold', color: '#4ffb24'}}>📅 {calendario[0].fecha} • 🕒 {calendario[0].hora}</p>
+              <div style={{ ...matchDisplay, gap: '40px' }}>
+                <span style={{ ...teamMain, fontSize: '1.8rem' }}>{calendario[0].local}</span>
+                <span style={{ ...vsCircle, width: '50px', height: '50px' }}>VS</span>
+                <span style={{ ...teamMain, fontSize: '1.8rem' }}>{calendario[0].visitante}</span>
+              </div>
+              <p style={{ ...timeTag, fontSize: '1.1rem', fontWeight: 'bold', color: '#4ffb24' }}>📅 {calendario[0].fecha} • 🕒 {calendario[0].hora}</p>
             </div>
 
             {calendario.length > 1 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '15px', marginTop: '20px' }}>
                 {calendario.slice(1).map((p, i) => (
                   <div key={i} style={{ padding: '15px', background: '#0f172a', borderRadius: '12px', border: '1px solid #1e293b' }}>
-                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                       <span style={{ fontSize: '1rem', fontWeight: '600' }}>{p.local} <span style={{color: '#64748b', fontSize:'0.8rem', margin:'0 5px'}}>vs</span> {p.visitante}</span>
-                     </div>
-                     <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
-                       📅 {p.fecha} • 🕒 {p.hora}
-                     </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '1rem', fontWeight: '600' }}>{p.local} <span style={{ color: '#64748b', fontSize: '0.8rem', margin: '0 5px' }}>vs</span> {p.visitante}</span>
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
+                      📅 {p.fecha} • 🕒 {p.hora}
+                    </div>
                   </div>
                 ))}
               </div>
             )}
           </>
         ) : (
-          <p style={{textAlign: 'center', color: '#94a3b8'}}>Sin partidos programados</p>
+          <p style={{ textAlign: 'center', color: '#94a3b8' }}>Sin partidos programados</p>
         )}
       </section>
 
       <div style={gridContainer}>
-         <div style={cardStyle}>
-            <div style={cardHeader}>🏆 CLASIFICACIÓN DETALLADA</div>
-            <div style={{overflowX: 'auto'}}>
-              <table style={tableStyle}>
-                 <thead>
-                    <tr>
-                      <th style={thS}>POS</th>
-                      <th style={thSClub}>CLUB</th>
-                      <th style={thS}>PJ</th>
-                      <th style={thS}>GF</th>
-                      <th style={thS}>GC</th>
-                      <th style={thS}>DG</th>
-                      <th style={thS}>PTS</th>
-                    </tr>
-                 </thead>
-                 <tbody>
-                    {tabla.map((e, i) => (
-                       <tr key={i} style={rowStyle} onClick={() => setEquipoSeleccionado(e.nombre)}>
-                          <td style={tdS}>{i + 1}</td>
-                          <td style={tdSClub}>{e.nombre}</td>
-                          <td style={tdS}>{e.pj}</td>
-                          <td style={tdS}>{e.gf}</td>
-                          <td style={tdS}>{e.gc}</td>
-                          <td style={tdS}>{e.dg}</td>
-                          <td style={{...tdS, color: '#4ffb24', fontWeight: '900'}}>{e.puntos}</td>
-                       </tr>
-                    ))}
-                 </tbody>
-              </table>
-            </div>
-         </div>
+        <div style={cardStyle}>
+          <div style={cardHeader}>🏆 CLASIFICACIÓN DETALLADA</div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={tableStyle}>
+              <thead>
+                <tr>
+                  <th style={thS}>POS</th>
+                  <th style={thSClub}>CLUB</th>
+                  <th style={thS}>PJ</th>
+                  <th style={thS}>GF</th>
+                  <th style={thS}>GC</th>
+                  <th style={thS}>DG</th>
+                  <th style={thS}>PTS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tabla.map((e, i) => (
+                  <tr key={i} style={rowStyle} onClick={() => setEquipoSeleccionado(e.nombre)}>
+                    <td style={tdS}>{i + 1}</td>
+                    <td style={tdSClub}>{e.nombre}</td>
+                    <td style={tdS}>{e.pj}</td>
+                    <td style={tdS}>{e.gf}</td>
+                    <td style={tdS}>{e.gc}</td>
+                    <td style={tdS}>{e.dg}</td>
+                    <td style={{ ...tdS, color: '#4ffb24', fontWeight: '900' }}>{e.puntos}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-         <div style={cardStyle}>
-            <div style={cardHeader}>🎯 TOP SCORERS</div>
-            <div style={{marginTop: '20px'}}>
-              {goleadores.length > 0 ? goleadores.map((g, i) => (
-                 <div key={i} style={scorerRow}>
-                    <span style={rankNumber}>{i + 1}</span>
-                    <span style={scorerName}>{g.nombre}</span>
-                    <span style={scoreBadge}>{g.goles}</span>
-                 </div>
-              )) : <p style={{color: '#94a3b8', textAlign: 'center'}}>Aún no hay goles registrados.</p>}
-            </div>
-         </div>
+        <div style={cardStyle}>
+          <div style={cardHeader}>🎯 TOP SCORERS</div>
+          <div style={{ marginTop: '20px' }}>
+            {goleadores.length > 0 ? goleadores.map((g, i) => (
+              <div key={i} style={scorerRow}>
+                <span style={rankNumber}>{i + 1}</span>
+                <span style={scorerName}>{g.nombre}</span>
+                <span style={scoreBadge}>{g.goles}</span>
+              </div>
+            )) : <p style={{ color: '#94a3b8', textAlign: 'center' }}>Aún no hay goles registrados.</p>}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -217,11 +217,11 @@ export default function Dashboard() {
   return (
     <div style={mainContainer}>
       <nav style={navBar}>
-         <div style={logo}>COPOL<span style={{color: '#4ffb24'}}>SCORE</span></div>
-         <Link href="/Calendarios"><button style={adminCircle}>⚙️</button></Link>
+        <div style={logo}>COPOL<span style={{ color: '#4ffb24' }}>SCORE</span></div>
+        <Link href="/Calendarios"><button style={adminCircle}>⚙️</button></Link>
       </nav>
 
-      <main style={{maxWidth: '1200px', margin: '0 auto', padding: '30px 20px'}}>
+      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '30px 20px' }}>
         {step > 1 && step < 4 && (
           <button onClick={() => setStep(step - 1)} style={backButtonStyle}>← Volver atrás</button>
         )}
@@ -231,42 +231,42 @@ export default function Dashboard() {
           { title: "DEPORTE", key: "deporte", opts: ["Futbol", "Volley", "Basket"] },
           { title: "CATEGORÍA", key: "categoria", opts: ["Inferior", "Intermedia", "Superior"] }
         ].map((s, idx) => step === idx + 1 && (
-           <div key={s.key} style={selectionContainer}>
-             <h1 style={selectionTitle}>Selecciona {s.title}</h1>
-             <div style={gridButtons}>
-               {s.opts.map(opt => (
-                 <button key={opt} style={modernBtn} onClick={() => {setSel({...sel, [s.key]: opt}); setStep(idx + 2);}}>
-                   {opt}
-                 </button>
-               ))}
-             </div>
+          <div key={s.key} style={selectionContainer}>
+            <h1 style={selectionTitle}>Selecciona {s.title}</h1>
+            <div style={gridButtons}>
+              {s.opts.map(opt => (
+                <button key={opt} style={modernBtn} onClick={() => { setSel({ ...sel, [s.key]: opt }); setStep(idx + 2); }}>
+                  {opt}
+                </button>
+              ))}
+            </div>
 
-             {/* LOGO COPOL: Visible en los 3 pasos de selección inicial */}
-             <div style={logoBottomContainer}>
-               <img 
-                 src="/logo-copol.png" 
-                 alt="Logo Copol" 
-                 style={logoBottomStyle} 
-               />
-             </div>
-           </div>
+            {/* LOGO COPOL: Visible en los 3 pasos de selección inicial */}
+            <div style={logoBottomContainer}>
+              <img
+                src="/logo-copol.png"
+                alt="Logo Copol"
+                style={logoBottomStyle}
+              />
+            </div>
+          </div>
         ))}
 
         {step === 4 && (
           <div>
             <div style={infoBar}>
-               <div style={breadcrumbStyle}>
-                 <button onClick={() => setStep(3)} style={backArrowStyle}>← Volver</button>
-                 <span>{sel.deporte} • {sel.genero} • {sel.categoria}</span>
-               </div>
-               <button onClick={() => setStep(1)} style={resetBtn}>REINICIAR FILTRO</button>
+              <div style={breadcrumbStyle}>
+                <button onClick={() => setStep(3)} style={backArrowStyle}>← Volver</button>
+                <span>{sel.deporte} • {sel.genero} • {sel.categoria}</span>
+              </div>
+              <button onClick={() => setStep(1)} style={resetBtn}>REINICIAR FILTRO</button>
             </div>
             <VistaDeportiva {...sel} onBack={() => setStep(3)} />
           </div>
         )}
       </main>
       <footer style={copyrightStyle}>
-        © {new Date().getFullYear()} Juan Diego Esteves mendoza. Todos los derechos reservados.
+        © {new Date().getFullYear()} Juan Diego Esteves Mendoza. Todos los derechos reservados.
       </footer>
     </div>
   );
