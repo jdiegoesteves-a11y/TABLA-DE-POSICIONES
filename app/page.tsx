@@ -8,7 +8,7 @@ import Link from "next/link";
 /**
  * INTERFACES DE DATOS
  */
-interface IEquipo { nombre: string; puntos: number; pj: number; gf: number; gc: number; dg: number; }
+interface IEquipo { nombre: string; puntos: number; pj: number; pg: number; pe: number; pp: number; gf: number; gc: number; dg: number; }
 interface IPartido { id: string; local: string; visitante: string; golesLocal: number; golesVisitante: number; goleadoresLocal: string; goleadoresVisitante: string; fecha: string; hora: string; }
 interface IGoleador { nombre: string; goles: number; }
 
@@ -56,7 +56,7 @@ function VistaDeportiva({ genero, deporte, categoria, onBack }: {
     const contGoles: Record<string, number> = {};
 
     eqs.filter(e => e.deporte === deporte && e.genero === genero && e.categoria === categoria)
-      .forEach(e => tablaTemp[e.nombre] = { nombre: e.nombre, puntos: 0, pj: 0, gf: 0, gc: 0, dg: 0 });
+      .forEach(e => tablaTemp[e.nombre] = { nombre: e.nombre, puntos: 0, pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dg: 0 });
 
     pts.forEach(p => {
       if (tablaTemp[p.local] && tablaTemp[p.visitante]) {
@@ -67,9 +67,52 @@ function VistaDeportiva({ genero, deporte, categoria, onBack }: {
         tablaTemp[p.local].dg = tablaTemp[p.local].gf - tablaTemp[p.local].gc;
         tablaTemp[p.visitante].dg = tablaTemp[p.visitante].gf - tablaTemp[p.visitante].gc;
 
-        if (vL > vV) tablaTemp[p.local].puntos += 3;
-        else if (vL < vV) tablaTemp[p.visitante].puntos += 3;
-        else { tablaTemp[p.local].puntos += 1; tablaTemp[p.visitante].puntos += 1; }
+        if (deporte === "Basket") {
+          if (vL > vV) {
+            tablaTemp[p.local].puntos += 2;
+            tablaTemp[p.visitante].puntos += 1;
+            tablaTemp[p.local].pg++; tablaTemp[p.visitante].pp++;
+          } else if (vL < vV) {
+            tablaTemp[p.visitante].puntos += 2;
+            tablaTemp[p.local].puntos += 1;
+            tablaTemp[p.visitante].pg++; tablaTemp[p.local].pp++;
+          } else {
+            tablaTemp[p.local].puntos += 1; tablaTemp[p.visitante].puntos += 1;
+            tablaTemp[p.local].pe++; tablaTemp[p.visitante].pe++;
+          }
+        } else if (deporte === "Volley") {
+          if (vL > vV) {
+            tablaTemp[p.local].pg++; tablaTemp[p.visitante].pp++;
+            if (vL - vV === 1) {
+              tablaTemp[p.local].puntos += 2;
+              tablaTemp[p.visitante].puntos += 1;
+            } else {
+              tablaTemp[p.local].puntos += 3;
+            }
+          } else if (vL < vV) {
+            tablaTemp[p.visitante].pg++; tablaTemp[p.local].pp++;
+            if (vV - vL === 1) {
+              tablaTemp[p.visitante].puntos += 2;
+              tablaTemp[p.local].puntos += 1;
+            } else {
+              tablaTemp[p.visitante].puntos += 3;
+            }
+          } else {
+            tablaTemp[p.local].puntos += 1; tablaTemp[p.visitante].puntos += 1;
+            tablaTemp[p.local].pe++; tablaTemp[p.visitante].pe++;
+          }
+        } else {
+          if (vL > vV) {
+            tablaTemp[p.local].puntos += 3;
+            tablaTemp[p.local].pg++; tablaTemp[p.visitante].pp++;
+          } else if (vL < vV) {
+            tablaTemp[p.visitante].puntos += 3;
+            tablaTemp[p.visitante].pg++; tablaTemp[p.local].pp++;
+          } else {
+            tablaTemp[p.local].puntos += 1; tablaTemp[p.visitante].puntos += 1;
+            tablaTemp[p.local].pe++; tablaTemp[p.visitante].pe++;
+          }
+        }
       }
 
       [p.goleadoresLocal, p.goleadoresVisitante].forEach(txt => {
@@ -82,7 +125,7 @@ function VistaDeportiva({ genero, deporte, categoria, onBack }: {
       });
     });
 
-    setTabla(Object.values(tablaTemp).sort((a, b) => b.puntos - a.puntos || b.dg - a.dg));
+    setTabla(Object.values(tablaTemp).sort((a, b) => b.puntos - a.puntos || b.dg - a.dg || b.gf - a.gf));
     setGoleadores(Object.entries(contGoles).map(([nombre, goles]) => ({ nombre, goles })).sort((a, b) => b.goles - a.goles).slice(0, 5));
   };
 
@@ -167,9 +210,12 @@ function VistaDeportiva({ genero, deporte, categoria, onBack }: {
                   <th style={thS}>POS</th>
                   <th style={thSClub}>CLUB</th>
                   <th style={thS}>PJ</th>
-                  <th style={thS}>GF</th>
-                  <th style={thS}>GC</th>
-                  <th style={thS}>DG</th>
+                  <th style={thS}>G</th>
+                  {deporte === "Futbol" && <th style={thS}>E</th>}
+                  <th style={thS}>P</th>
+                  <th style={thS}>{deporte === "Basket" ? "PF" : deporte === "Volley" ? "SF" : "GF"}</th>
+                  <th style={thS}>{deporte === "Basket" ? "PC" : deporte === "Volley" ? "SC" : "GC"}</th>
+                  <th style={thS}>{deporte === "Basket" ? "DP" : deporte === "Volley" ? "DS" : "DG"}</th>
                   <th style={thS}>PTS</th>
                 </tr>
               </thead>
@@ -179,6 +225,9 @@ function VistaDeportiva({ genero, deporte, categoria, onBack }: {
                     <td style={tdS}>{i + 1}</td>
                     <td style={tdSClub}>{e.nombre}</td>
                     <td style={tdS}>{e.pj}</td>
+                    <td style={tdS}>{e.pg}</td>
+                    {deporte === "Futbol" && <td style={tdS}>{e.pe}</td>}
+                    <td style={tdS}>{e.pp}</td>
                     <td style={tdS}>{e.gf}</td>
                     <td style={tdS}>{e.gc}</td>
                     <td style={tdS}>{e.dg}</td>
