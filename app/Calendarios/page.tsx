@@ -143,12 +143,12 @@ function PartidosComponent() {
           <select style={inputStyle} value={partido.visitante} onChange={(e) => setPartido({...partido, visitante: e.target.value})}><option value="">Visitante</option>{equipos.map(n => <option key={n} value={n}>{n}</option>)}</select>
         </div>
         <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "15px" }}>
-           <input type="number" placeholder="L" style={{...inputStyle, width: "60px", backgroundColor: "#fbbf24", color: "black", fontSize: "1.2rem", fontWeight: "bold", textAlign: "center"}} value={partido.golesLocal} onChange={(e) => setPartido({...partido, golesLocal: e.target.value})}/>
-           <input type="number" placeholder="V" style={{...inputStyle, width: "60px", backgroundColor: "#fbbf24", color: "black", fontSize: "1.2rem", fontWeight: "bold", textAlign: "center"}} value={partido.golesVisitante} onChange={(e) => setPartido({...partido, golesVisitante: e.target.value})}/>
+           <input type="number" placeholder={config.deporte === 'Basket' ? "Pts L" : config.deporte === 'Volley' ? "Sets L" : "Goles L"} title="Local" style={{...inputStyle, width: "90px", backgroundColor: "#fbbf24", color: "black", fontSize: "1.1rem", fontWeight: "bold", textAlign: "center"}} value={partido.golesLocal} onChange={(e) => setPartido({...partido, golesLocal: e.target.value})}/>
+           <input type="number" placeholder={config.deporte === 'Basket' ? "Pts V" : config.deporte === 'Volley' ? "Sets V" : "Goles V"} title="Visitante" style={{...inputStyle, width: "90px", backgroundColor: "#fbbf24", color: "black", fontSize: "1.1rem", fontWeight: "bold", textAlign: "center"}} value={partido.golesVisitante} onChange={(e) => setPartido({...partido, golesVisitante: e.target.value})}/>
         </div>
-        <input style={inputStyle} placeholder="Goleadores Local (Ej: Juan(2), Pedro)" value={partido.goleadoresLocal} onChange={(e) => setPartido({...partido, goleadoresLocal: e.target.value})} />
-        <input style={inputStyle} placeholder="Goleadores Visitante" value={partido.goleadoresVisitante} onChange={(e) => setPartido({...partido, goleadoresVisitante: e.target.value})} />
-        <input style={inputStyle} placeholder="MVP" value={partido.mvp} onChange={(e) => setPartido({...partido, mvp: e.target.value})} />
+        <input style={inputStyle} placeholder={config.deporte === 'Basket' ? "Anotadores Local (Ej: Juan(15))" : config.deporte === 'Volley' ? "Anotadores Local (Opcional)" : "Goleadores Local (Ej: Juan(2))"} value={partido.goleadoresLocal} onChange={(e) => setPartido({...partido, goleadoresLocal: e.target.value})} />
+        <input style={inputStyle} placeholder={config.deporte === 'Basket' ? "Anotadores Visitante" : config.deporte === 'Volley' ? "Anotadores Visitante (Opcional)" : "Goleadores Visitante"} value={partido.goleadoresVisitante} onChange={(e) => setPartido({...partido, goleadoresVisitante: e.target.value})} />
+        <input style={inputStyle} placeholder="MVP del Partido" value={partido.mvp} onChange={(e) => setPartido({...partido, mvp: e.target.value})} />
         <button onClick={guardar} style={btnStyle}>PUBLICAR</button>
       </div>
       <div style={{marginTop: "20px"}}>
@@ -156,7 +156,9 @@ function PartidosComponent() {
            <div key={p.id} style={{...cardStyle, marginBottom: "10px", display: "flex", justifyContent: "space-between", alignItems: "center"}}>
              <div>
                <div style={{fontWeight: "bold"}}>{p.local} <span style={{color: "#fbbf24"}}>{p.golesLocal} - {p.golesVisitante}</span> {p.visitante}</div>
-               <div style={{fontSize: "0.8rem", color: "#94a3b8"}}>⚽ {p.goleadoresLocal} {p.goleadoresVisitante}</div>
+               <div style={{fontSize: "0.8rem", color: "#94a3b8"}}>
+                 {config.deporte === 'Basket' ? "🏀" : config.deporte === 'Volley' ? "🏐" : "⚽"} {p.goleadoresLocal} {p.goleadoresLocal && p.goleadoresVisitante ? ' | ' : ''} {p.goleadoresVisitante}
+               </div>
                <div style={{fontSize: "0.8rem", color: "#fbbf24"}}>⭐ MVP: {p.mvp || "N/A"}</div>
              </div>
              <button onClick={() => deleteDoc(doc(db, "partidos", p.id))} style={{color: "#ef4444", border: "none", background: "none", cursor: "pointer", fontWeight: "bold"}}>Borrar</button>
