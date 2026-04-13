@@ -9,7 +9,7 @@ import Link from "next/link";
  * INTERFACES DE DATOS
  */
 interface IEquipo { nombre: string; puntos: number; pj: number; pg: number; pe: number; pp: number; gf: number; gc: number; dg: number; }
-interface IPartido { id: string; local: string; visitante: string; golesLocal: number; golesVisitante: number; goleadoresLocal: string; goleadoresVisitante: string; fecha: string; hora: string; }
+interface IPartido { id: string; local: string; visitante: string; golesLocal: number; golesVisitante: number; goleadoresLocal: string; goleadoresVisitante: string; fecha: string; hora: string; mvp?: string; fotoMvpUrl?: string; }
 interface IGoleador { nombre: string; goles: number; }
 
 /**
@@ -23,6 +23,7 @@ function VistaDeportiva({ genero, deporte, categoria, onBack }: {
   const [goleadores, setGoleadores] = useState<IGoleador[]>([]);
   const [todosLosPartidos, setTodosLosPartidos] = useState<IPartido[]>([]);
   const [equipoSeleccionado, setEquipoSeleccionado] = useState<string | null>(null);
+  const [partidoExpandido, setPartidoExpandido] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -132,26 +133,146 @@ function VistaDeportiva({ genero, deporte, categoria, onBack }: {
   const renderModalHistorial = () => {
     if (!equipoSeleccionado) return null;
     const historial = todosLosPartidos.filter(p => p.local === equipoSeleccionado || p.visitante === equipoSeleccionado);
+    const proximosPartidos = calendario.filter(p => p.local === equipoSeleccionado || p.visitante === equipoSeleccionado);
 
     return (
       <div style={modalOverlayStyle}>
         <div style={modalContentStyle}>
-          <div style={modalHeaderStyle}>
-            <h2>Historial: <span style={{ color: '#4ffb24' }}>{equipoSeleccionado}</span></h2>
-            <button onClick={() => setEquipoSeleccionado(null)} style={closeBtnStyle}>✕</button>
+          <div style={{...modalHeaderStyle, borderBottom: '1px solid #334155', paddingBottom: '20px', marginBottom: '20px'}}>
+            <h2 style={{ fontSize: '1.8rem', fontWeight: '900', margin: 0, color: '#f8fafc' }}>
+              Historial: <span style={{ background: 'linear-gradient(90deg, #4ffb24, #a3e635)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{equipoSeleccionado}</span>
+            </h2>
+            <button onClick={() => { setEquipoSeleccionado(null); setPartidoExpandido(null); }} style={{...closeBtnStyle, background: '#334155', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.3s'}} onMouseEnter={e => e.currentTarget.style.background = '#475569'} onMouseLeave={e => e.currentTarget.style.background = '#334155'}>✕</button>
           </div>
-          <div style={{ marginTop: '20px' }}>
-            {historial.length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#94a3b8' }}>No hay partidos registrados aún.</p>
-            ) : (
-              historial.map(p => (
-                <div key={p.id} style={historyMatchStyle}>
-                  <div style={{ flex: 1, textAlign: 'right', color: p.golesLocal > p.golesVisitante ? '#fff' : '#94a3b8' }}>{p.local}</div>
-                  <div style={historyScoreStyle}>{p.golesLocal} - {p.golesVisitante}</div>
-                  <div style={{ flex: 1, textAlign: 'left', color: p.golesVisitante > p.golesLocal ? '#fff' : '#94a3b8' }}>{p.visitante}</div>
+          <div style={{ maxHeight: '65vh', overflowY: 'auto', paddingRight: '10px' }}>
+            
+            {/* PRÓXIMOS PARTIDOS */}
+            {proximosPartidos.length > 0 && (
+              <div style={{ marginBottom: '30px' }}>
+                <h3 style={{ color: '#94a3b8', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{color: '#fbbf24'}}>📅</span> Próximos Partidos
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {proximosPartidos.map(p => (
+                    <div key={p.id} style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '15px 20px', borderRadius: '16px', border: '1px solid #1e293b', borderLeft: '4px solid #4ffb24', display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px' }}>
+                        <span style={{ flex: 1, textAlign: 'right', fontWeight: '800', fontSize: '1.1rem', color: '#f8fafc', wordBreak: 'break-word' }}>{p.local}</span>
+                        <span style={{ background: '#1e293b', padding: '4px 10px', borderRadius: '8px', color: '#64748b', fontSize: '0.8rem', fontWeight: 'bold' }}>VS</span>
+                        <span style={{ flex: 1, textAlign: 'left', fontWeight: '800', fontSize: '1.1rem', color: '#f8fafc', wordBreak: 'break-word' }}>{p.visitante}</span>
+                      </div>
+                      <div style={{ textAlign: 'center', fontSize: '0.85rem', color: '#cbd5e1', backgroundColor: '#0f172a', padding: '6px', borderRadius: '8px', alignSelf: 'center', display: 'inline-block', marginTop: '5px' }}>
+                        📅 {p.fecha || 'Por definir'} • 🕒 {p.hora || 'Por definir'}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))
+              </div>
             )}
+
+            {/* PARTIDOS JUGADOS */}
+            <div>
+              <h3 style={{ color: '#94a3b8', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{color: '#4ffb24'}}>⚽</span> Partidos Jugados
+              </h3>
+              {historial.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '30px', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '16px', border: '1px dashed #334155' }}>
+                  <p style={{ color: '#94a3b8', fontSize: '1rem' }}>No hay partidos registrados aún.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  {historial.map(p => (
+                    <div key={p.id} style={{ background: 'rgba(30, 41, 59, 0.5)', borderRadius: '16px', border: '1px solid #334155', overflow: 'hidden', transition: 'all 0.3s ease', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                      {/* CABECERA CLICKABLE */}
+                      <div
+                        onClick={() => setPartidoExpandido(prev => prev === p.id ? null : p.id)}
+                        style={{ padding: '20px', cursor: 'pointer', position: 'relative', transition: "background 0.2s" }}
+                        onMouseEnter={e => (e.currentTarget.style.background = "rgba(51, 65, 85, 0.4)")}
+                        onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ flex: 1, textAlign: 'right', fontWeight: '800', fontSize: '1.2rem', color: p.golesLocal > p.golesVisitante ? '#fff' : '#94a3b8', wordBreak: 'break-word' }}>{p.local}</div>
+                          
+                          {/* SCORE BADGE */}
+                          <div style={{ margin: '0 15px', background: 'linear-gradient(145deg, #0f172a, #1e293b)', padding: '10px 20px', borderRadius: '16px', border: '1px solid #475569', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)' }}>
+                            <span style={{ fontSize: '1.4rem', fontWeight: '900', color: p.golesLocal > p.golesVisitante ? '#4ffb24' : p.golesLocal < p.golesVisitante ? '#ef4444' : '#cbd5e1' }}>{p.golesLocal}</span>
+                            <span style={{ color: '#64748b' }}>-</span>
+                            <span style={{ fontSize: '1.4rem', fontWeight: '900', color: p.golesVisitante > p.golesLocal ? '#4ffb24' : p.golesVisitante < p.golesLocal ? '#ef4444' : '#cbd5e1' }}>{p.golesVisitante}</span>
+                          </div>
+                          
+                          <div style={{ flex: 1, textAlign: 'left', fontWeight: '800', fontSize: '1.2rem', color: p.golesVisitante > p.golesLocal ? '#fff' : '#94a3b8', wordBreak: 'break-word' }}>{p.visitante}</div>
+                        </div>
+
+                        {/* NOTADORES (Scorers) */}
+                        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '15px', gap: '15px', fontSize: '0.85rem' }}>
+                          <div style={{ flex: 1, textAlign: 'right', color: '#cbd5e1', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                            {(p.goleadoresLocal || "").split(',').filter(Boolean).map((gol, i) => (
+                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>{gol.trim()} <span style={{fontSize:'0.7rem'}}>⚽</span></div>
+                            ))}
+                          </div>
+                          <div style={{ width: '60px' }}></div> {/* Spacer to align under score */}
+                          <div style={{ flex: 1, textAlign: 'left', color: '#cbd5e1', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                            {(p.goleadoresVisitante || "").split(',').filter(Boolean).map((gol, i) => (
+                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><span style={{fontSize:'0.7rem'}}>⚽</span> {gol.trim()}</div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* MVP BADGE */}
+                        {p.mvp && (
+                          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+                            <div style={{ background: 'linear-gradient(135deg, #f59e0b, #eab308)', padding: '6px 18px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 10px rgba(245, 158, 11, 0.3)', border: '1px solid #fde047' }}>
+                              <span style={{ fontSize: '1.1rem' }}>🏆</span>
+                              <span style={{ color: '#0f172a', fontWeight: '900', fontSize: '0.9rem', letterSpacing: '0.5px' }}>MVP: {p.mvp}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* DROPDOWN INDICATOR */}
+                        <div style={{ position: 'absolute', bottom: '15px', right: '20px' }}>
+                          <span style={{ color: "#64748b", fontSize: "0.9rem", transition: "transform 0.3s", display: "inline-block", transform: partidoExpandido === p.id ? "rotate(180deg)" : "rotate(0deg)" }}>▼</span>
+                        </div>
+                      </div>
+
+                      {/* CONTENIDO EXPANDIDO */}
+                      {partidoExpandido === p.id && (
+                        <div style={{ borderTop: "1px solid #334155", padding: "20px", background: "rgba(15, 23, 42, 0.8)", borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px' }}>
+                          {p.fecha && (
+                            <div style={{ marginBottom: "20px", textAlign: "center", display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ background: '#334155', padding: '6px 12px', borderRadius: '12px', color: '#f8fafc', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                                📅 Registrado el: {new Date(p.fecha).toLocaleDateString("es-AR", { day: "2-digit", month: "long", year: "numeric" })}
+                              </span>
+                            </div>
+                          )}
+
+                          {p.fotoMvpUrl ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: "10px", background: '#0f172a', padding: '20px', borderRadius: '16px', border: '1px solid #1e293b' }}>
+                              <p style={{ color: "#fcd34d", fontWeight: "900", marginBottom: "15px", fontSize: "1rem", textTransform: 'uppercase', letterSpacing: '1px' }}>📸 Jugador MVP</p>
+                              <img
+                                src={p.fotoMvpUrl}
+                                alt={`MVP: ${p.mvp}`}
+                                style={{
+                                  maxWidth: "100%",
+                                  maxHeight: "350px",
+                                  borderRadius: "12px",
+                                  objectFit: "cover",
+                                  border: "3px solid #f59e0b",
+                                  boxShadow: "0 0 25px rgba(245, 158, 11, 0.4)"
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <div style={{ textAlign: "center", color: "#64748b", fontSize: "0.9rem", padding: "15px", background: '#0f172a', borderRadius: '12px', border: '1px dashed #334155' }}>
+                              {p.mvp ? `⭐ MVP: ${p.mvp} (El jugador no tiene foto registrada)` : "Sin MVP ni foto registrada"}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       </div>
