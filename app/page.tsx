@@ -452,7 +452,7 @@ export default function Dashboard() {
               </div>
               <button onClick={() => setStep(1)} style={resetBtn}>REINICIAR FILTRO</button>
             </div>
-            <VistaDeportiva {...sel} onBack={() => setStep(3)} />
+            <VistaDeportiva {...sel} />
           </div>
         )}
       </main>
