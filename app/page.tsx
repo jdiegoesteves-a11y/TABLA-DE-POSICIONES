@@ -377,18 +377,22 @@ function VistaSubcategoria({ genero, deporte, categoria }: {
   );
 }
 
-function VistaDeportiva({ genero, deporte, categoria, onBack }: {
-  genero: string; deporte: string; categoria: string; onBack: () => void
+function VistaDeportiva({ genero, deporte, categoria }: {
+  genero: string; deporte: string; categoria: string;
 }) {
+  const subcats = categoria === "Inferior" 
+    ? ["8vo", "9no"] 
+    : (categoria === "Intermedia" ? ["10mo", "1ro"] : ["2do", "3ro"]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "60px" }}>
       <section>
-        <h2 style={{ textAlign: "center", color: "#4ffb24", fontSize: "2.5rem", fontWeight: "900", marginBottom: "20px", borderBottom: "2px solid #334155", paddingBottom: "10px", marginTop: "20px" }}>{categoria.toUpperCase()} 1</h2>
-        <VistaSubcategoria genero={genero} deporte={deporte} categoria={`${categoria} 1`} />
+        <h2 style={{ textAlign: "center", color: "#4ffb24", fontSize: "2.5rem", fontWeight: "900", marginBottom: "20px", borderBottom: "2px solid #334155", paddingBottom: "10px", marginTop: "20px" }}>{subcats[0]}</h2>
+        <VistaSubcategoria genero={genero} deporte={deporte} categoria={subcats[0]} />
       </section>
       <section>
-        <h2 style={{ textAlign: "center", color: "#4ffb24", fontSize: "2.5rem", fontWeight: "900", marginBottom: "20px", borderBottom: "2px solid #334155", paddingBottom: "10px", marginTop: "40px" }}>{categoria.toUpperCase()} 2</h2>
-        <VistaSubcategoria genero={genero} deporte={deporte} categoria={`${categoria} 2`} />
+        <h2 style={{ textAlign: "center", color: "#4ffb24", fontSize: "2.5rem", fontWeight: "900", marginBottom: "20px", borderBottom: "2px solid #334155", paddingBottom: "10px", marginTop: "40px" }}>{subcats[1]}</h2>
+        <VistaSubcategoria genero={genero} deporte={deporte} categoria={subcats[1]} />
       </section>
     </div>
   );

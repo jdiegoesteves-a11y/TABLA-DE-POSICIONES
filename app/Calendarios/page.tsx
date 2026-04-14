@@ -64,7 +64,7 @@ export default function AdminPanel() {
 // --- SUB-COMPONENTE EQUIPOS ---
 function EquiposComponent() {
   const [nombre, setNombre] = useState("");
-  const [config, setConfig] = useState({ genero: "Varones", deporte: "Futbol", categoria: "Inferior 1" });
+  const [config, setConfig] = useState({ genero: "Varones", deporte: "Futbol", categoria: "8vo" });
   const [equipos, setEquipos] = useState<any[]>([]);
 
   useEffect(() => {
@@ -84,7 +84,7 @@ function EquiposComponent() {
       <div style={{ ...cardStyle, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "20px" }}>
         <select style={inputStyle} value={config.genero} onChange={(e) => setConfig({...config, genero: e.target.value})}><option value="Varones">Varones</option><option value="Damas">Damas</option></select>
         <select style={inputStyle} value={config.deporte} onChange={(e) => setConfig({...config, deporte: e.target.value})}><option value="Futbol">Fútbol</option><option value="Volley">Volley</option><option value="Basket">Basket</option></select>
-        <select style={inputStyle} value={config.categoria} onChange={(e) => setConfig({...config, categoria: e.target.value})}><option value="Inferior 1">Inferior 1</option><option value="Inferior 2">Inferior 2</option><option value="Intermedia 1">Intermedia 1</option><option value="Intermedia 2">Intermedia 2</option><option value="Superior 1">Superior 1</option><option value="Superior 2">Superior 2</option></select>
+        <select style={inputStyle} value={config.categoria} onChange={(e) => setConfig({...config, categoria: e.target.value})}><option value="8vo">8vo</option><option value="9no">9no</option><option value="10mo">10mo</option><option value="1ro">1ro</option><option value="2do">2do</option><option value="3ro">3ro</option></select>
       </div>
       <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
         <input style={{ ...inputStyle, flex: 1, marginBottom: 0 }} placeholder="Nuevo equipo..." value={nombre} onChange={(e) => setNombre(e.target.value)} />
@@ -104,7 +104,7 @@ function EquiposComponent() {
 
 // --- SUB-COMPONENTE PARTIDOS (CORREGIDO) ---
 function PartidosComponent() {
-  const [config, setConfig] = useState({ genero: "Varones", deporte: "Futbol", categoria: "Inferior 1" });
+  const [config, setConfig] = useState({ genero: "Varones", deporte: "Futbol", categoria: "8vo" });
   const [equipos, setEquipos] = useState<string[]>([]);
   const [partidos, setPartidos] = useState<any[]>([]);
   const [partido, setPartido] = useState({ local: "", visitante: "", golesLocal: "", golesVisitante: "", goleadoresLocal: "", goleadoresVisitante: "", mvp: "" });
@@ -134,7 +134,7 @@ function PartidosComponent() {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "20px" }}>
         <select style={inputStyle} value={config.genero} onChange={(e) => setConfig({...config, genero: e.target.value})}><option value="Varones">Varones</option><option value="Damas">Damas</option></select>
         <select style={inputStyle} value={config.deporte} onChange={(e) => setConfig({...config, deporte: e.target.value})}><option value="Futbol">Futbol</option><option value="Volley">Volley</option><option value="Basket">Basket</option></select>
-        <select style={inputStyle} value={config.categoria} onChange={(e) => setConfig({...config, categoria: e.target.value})}><option value="Inferior 1">Inferior 1</option><option value="Inferior 2">Inferior 2</option><option value="Intermedia 1">Intermedia 1</option><option value="Intermedia 2">Intermedia 2</option><option value="Superior 1">Superior 1</option><option value="Superior 2">Superior 2</option></select>
+        <select style={inputStyle} value={config.categoria} onChange={(e) => setConfig({...config, categoria: e.target.value})}><option value="8vo">8vo</option><option value="9no">9no</option><option value="10mo">10mo</option><option value="1ro">1ro</option><option value="2do">2do</option><option value="3ro">3ro</option></select>
       </div>
       <div style={cardStyle}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "10px", alignItems: "center", marginBottom: "15px" }}>
@@ -171,7 +171,7 @@ function PartidosComponent() {
 
 // --- SUB-COMPONENTE CALENDARIO ---
 function CalendarioComponent() {
-  const [config, setConfig] = useState({ genero: "Varones", deporte: "Futbol", categoria: "Inferior 1" });
+  const [config, setConfig] = useState({ genero: "Varones", deporte: "Futbol", categoria: "8vo" });
   const [equipos, setEquipos] = useState<any[]>([]);
   const [eventos, setEventos] = useState<any[]>([]);
   const [nuevo, setNuevo] = useState({ local: "", visitante: "", fecha: "", hora: "" });
@@ -195,7 +195,7 @@ function CalendarioComponent() {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "20px" }}>
         <select style={inputStyle} value={config.genero} onChange={(e) => setConfig({...config, genero: e.target.value})}><option value="Varones">Varones</option><option value="Damas">Damas</option></select>
         <select style={inputStyle} value={config.deporte} onChange={(e) => setConfig({...config, deporte: e.target.value})}><option value="Futbol">Futbol</option><option value="Volley">Volley</option><option value="Basket">Basket</option></select>
-        <select style={inputStyle} value={config.categoria} onChange={(e) => setConfig({...config, categoria: e.target.value})}><option value="Inferior 1">Inferior 1</option><option value="Inferior 2">Inferior 2</option><option value="Intermedia 1">Intermedia 1</option><option value="Intermedia 2">Intermedia 2</option><option value="Superior 1">Superior 1</option><option value="Superior 2">Superior 2</option></select>
+        <select style={inputStyle} value={config.categoria} onChange={(e) => setConfig({...config, categoria: e.target.value})}><option value="8vo">8vo</option><option value="9no">9no</option><option value="10mo">10mo</option><option value="1ro">1ro</option><option value="2do">2do</option><option value="3ro">3ro</option></select>
       </div>
       <div style={cardStyle}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
