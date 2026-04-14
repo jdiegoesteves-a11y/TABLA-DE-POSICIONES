@@ -15,8 +15,8 @@ interface IGoleador { nombre: string; goles: number; }
 /**
  * COMPONENTE VISTA DEPORTIVA (TABLAS Y CALENDARIO)
  */
-function VistaDeportiva({ genero, deporte, categoria, onBack }: {
-  genero: string; deporte: string; categoria: string; onBack: () => void
+function VistaSubcategoria({ genero, deporte, categoria }: {
+  genero: string; deporte: string; categoria: string;
 }) {
   const [tabla, setTabla] = useState<IEquipo[]>([]);
   const [calendario, setCalendario] = useState<IPartido[]>([]);
@@ -373,6 +373,23 @@ function VistaDeportiva({ genero, deporte, categoria, onBack }: {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function VistaDeportiva({ genero, deporte, categoria, onBack }: {
+  genero: string; deporte: string; categoria: string; onBack: () => void
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "60px" }}>
+      <section>
+        <h2 style={{ textAlign: "center", color: "#4ffb24", fontSize: "2.5rem", fontWeight: "900", marginBottom: "20px", borderBottom: "2px solid #334155", paddingBottom: "10px", marginTop: "20px" }}>{categoria.toUpperCase()} 1</h2>
+        <VistaSubcategoria genero={genero} deporte={deporte} categoria={`${categoria} 1`} />
+      </section>
+      <section>
+        <h2 style={{ textAlign: "center", color: "#4ffb24", fontSize: "2.5rem", fontWeight: "900", marginBottom: "20px", borderBottom: "2px solid #334155", paddingBottom: "10px", marginTop: "40px" }}>{categoria.toUpperCase()} 2</h2>
+        <VistaSubcategoria genero={genero} deporte={deporte} categoria={`${categoria} 2`} />
+      </section>
     </div>
   );
 }
