@@ -108,6 +108,10 @@ function PartidosComponent() {
   const [equipos, setEquipos] = useState<string[]>([]);
   const [partidos, setPartidos] = useState<any[]>([]);
   const [partido, setPartido] = useState({ local: "", visitante: "", golesLocal: "", golesVisitante: "", goleadoresLocal: "", goleadoresVisitante: "", mvp: "" });
+  const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const [subiendo, setSubiendo] = useState(false);
+
+  const IMGBB_API_KEY = "e0cdc2716abb1e39cd20af6dc89a866b";
 
   useEffect(() => {
     const qE = query(collection(db, "equipos"), where("genero", "==", config.genero), where("deporte", "==", config.deporte), where("categoria", "==", config.categoria));
@@ -116,16 +120,44 @@ function PartidosComponent() {
     onSnapshot(qP, (s) => setPartidos(s.docs.map(d => ({ id: d.id, ...d.data() }))));
   }, [config]);
 
+  const uploadToImgBB = async (file: File) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    try {
+      const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      return data.data.url;
+    } catch (error) {
+      console.error("Error al subir a ImgBB:", error);
+      return "";
+    }
+  };
+
   const guardar = async () => {
     if (!partido.local || !partido.visitante) return alert("Selecciona los equipos");
+    setSubiendo(true);
+
+    let finalFotoUrl = "";
+    if (fotoFile) {
+      finalFotoUrl = await uploadToImgBB(fotoFile);
+    }
+
     await addDoc(collection(db, "partidos"), { 
         ...partido, 
         ...config, 
         golesLocal: Number(partido.golesLocal || 0),
         golesVisitante: Number(partido.golesVisitante || 0),
+        fotoMvpUrl: finalFotoUrl,
         fecha: new Date().toISOString() 
     });
+
     setPartido({ local: "", visitante: "", golesLocal: "", golesVisitante: "", goleadoresLocal: "", goleadoresVisitante: "", mvp: "" });
+    setFotoFile(null);
+    setSubiendo(false);
+    alert("Resultado publicado correctamente");
   };
 
   return (
@@ -149,7 +181,20 @@ function PartidosComponent() {
         <input style={inputStyle} placeholder={config.deporte === 'Basket' ? "Anotadores Local (Ej: Juan(15))" : config.deporte === 'Volley' ? "Anotadores Local (Opcional)" : "Goleadores Local (Ej: Juan(2))"} value={partido.goleadoresLocal} onChange={(e) => setPartido({...partido, goleadoresLocal: e.target.value})} />
         <input style={inputStyle} placeholder={config.deporte === 'Basket' ? "Anotadores Visitante" : config.deporte === 'Volley' ? "Anotadores Visitante (Opcional)" : "Goleadores Visitante"} value={partido.goleadoresVisitante} onChange={(e) => setPartido({...partido, goleadoresVisitante: e.target.value})} />
         <input style={inputStyle} placeholder="MVP del Partido" value={partido.mvp} onChange={(e) => setPartido({...partido, mvp: e.target.value})} />
-        <button onClick={guardar} style={btnStyle}>PUBLICAR</button>
+        
+        <div style={{ marginBottom: "15px" }}>
+          <label style={{ fontSize: "0.8rem", color: "#94a3b8", display: "block", marginBottom: "5px" }}>Foto del MVP (ImgBB):</label>
+          <input 
+            type="file" 
+            accept="image/*" 
+            onChange={(e) => setFotoFile(e.target.files?.[0] || null)}
+            style={{ ...inputStyle, fontSize: "0.8rem", padding: "5px" }} 
+          />
+        </div>
+
+        <button disabled={subiendo} onClick={guardar} style={btnStyle}>
+          {subiendo ? "SUBIENDO..." : "PUBLICAR"}
+        </button>
       </div>
       <div style={{marginTop: "20px"}}>
         {partidos.map(p => (
@@ -176,12 +221,69 @@ function CalendarioComponent() {
   const [eventos, setEventos] = useState<any[]>([]);
   const [nuevo, setNuevo] = useState({ local: "", visitante: "", fecha: "", hora: "" });
 
+  const [partidoParaRegistrar, setPartidoParaRegistrar] = useState<any | null>(null);
+  const [subiendofoto, setSubiendoFoto] = useState(false);
+  const [resultado, setResultado] = useState({ golesLocal: "", golesVisitante: "", goleadoresLocal: "", goleadoresVisitante: "", mvp: "", fotoMvpUrl: "" });
+  const [fotoFile, setFotoFile] = useState<File | null>(null);
+
+  const IMGBB_API_KEY = "e0cdc2716abb1e39cd20af6dc89a866b";
+
   useEffect(() => {
     const qE = query(collection(db, "equipos"), where("genero", "==", config.genero), where("deporte", "==", config.deporte), where("categoria", "==", config.categoria));
     onSnapshot(qE, (s) => setEquipos(s.docs.map(d => d.data().nombre)));
     const qC = query(collection(db, "calendario"), orderBy("fecha", "asc"));
     onSnapshot(qC, (s) => setEventos(s.docs.map(d => ({ id: d.id, ...d.data() }))));
   }, [config]);
+
+  const uploadToImgBB = async (file: File) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    try {
+      const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      return data.data.url;
+    } catch (error) {
+      console.error("Error al subir a ImgBB:", error);
+      return "";
+    }
+  };
+
+  const registrarResultado = async () => {
+    if (!partidoParaRegistrar) return;
+    setSubiendoFoto(true);
+
+    let finalFotoUrl = "";
+    if (fotoFile) {
+      finalFotoUrl = await uploadToImgBB(fotoFile);
+    }
+
+    await addDoc(collection(db, "partidos"), {
+      local: partidoParaRegistrar.local,
+      visitante: partidoParaRegistrar.visitante,
+      golesLocal: Number(resultado.golesLocal || 0),
+      golesVisitante: Number(resultado.golesVisitante || 0),
+      goleadoresLocal: resultado.goleadoresLocal,
+      goleadoresVisitante: resultado.goleadoresVisitante,
+      mvp: resultado.mvp,
+      fotoMvpUrl: finalFotoUrl,
+      genero: partidoParaRegistrar.genero,
+      deporte: partidoParaRegistrar.deporte,
+      categoria: partidoParaRegistrar.categoria,
+      fecha: new Date().toISOString(),
+    });
+
+    // Eliminar del calendario después de registrar el resultado
+    await deleteDoc(doc(db, "calendario", partidoParaRegistrar.id));
+
+    setPartidoParaRegistrar(null);
+    setResultado({ golesLocal: "", golesVisitante: "", goleadoresLocal: "", goleadoresVisitante: "", mvp: "", fotoMvpUrl: "" });
+    setFotoFile(null);
+    setSubiendoFoto(false);
+    alert("Resultado registrado con éxito");
+  };
 
   const agendar = async () => {
     if (!nuevo.local || !nuevo.visitante || !nuevo.fecha || !nuevo.hora) return alert("Completa todos los datos");
@@ -213,7 +315,7 @@ function CalendarioComponent() {
         {eventos.map(ev => (
           <div key={ev.id} style={{ ...cardStyle, marginBottom: "10px", borderLeft: "4px solid #fbbf24" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
+              <div style={{ flex: 1 }}>
                 <div style={{ marginBottom: "5px" }}>
                   <span style={badgeStyle}>{ev.deporte}</span>
                   <span style={badgeStyle}>{ev.genero}</span>
@@ -225,8 +327,56 @@ function CalendarioComponent() {
                   <span>🕒 {ev.hora}</span>
                 </div>
               </div>
-              <button onClick={() => deleteDoc(doc(db, "calendario", ev.id))} style={{ color: "#ef4444", background: "none", border: "none", cursor: "pointer", fontSize: "1.2rem" }}>✖</button>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button 
+                  onClick={() => setPartidoParaRegistrar(ev)}
+                  style={{ backgroundColor: "#4ffb24", border: "none", borderRadius: "8px", color: "#0f172a", padding: "5px 10px", fontWeight: "bold", cursor: "pointer", fontSize: "0.75rem" }}
+                >
+                  REGISTRAR
+                </button>
+                <button onClick={() => deleteDoc(doc(db, "calendario", ev.id))} style={{ color: "#ef4444", background: "none", border: "none", cursor: "pointer", fontSize: "1.2rem" }}>✖</button>
+              </div>
             </div>
+
+            {partidoParaRegistrar?.id === ev.id && (
+              <div style={{ marginTop: "20px", padding: "15px", borderTop: "1px solid #334155", backgroundColor: "#0f172a", borderRadius: "12px" }}>
+                <h3 style={{ fontSize: "0.9rem", color: "#fbbf24", marginBottom: "15px", textAlign: "center" }}>REGISTRAR RESULTADO</h3>
+                <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "15px" }}>
+                  <input type="number" placeholder="L" style={{...inputStyle, width: "70px", marginBottom: 0, textAlign: "center"}} value={resultado.golesLocal} onChange={(e) => setResultado({...resultado, golesLocal: e.target.value})} />
+                  <span style={{ fontSize: "1.2rem", fontWeight: "bold" }}>-</span>
+                  <input type="number" placeholder="V" style={{...inputStyle, width: "70px", marginBottom: 0, textAlign: "center"}} value={resultado.golesVisitante} onChange={(e) => setResultado({...resultado, golesVisitante: e.target.value})} />
+                </div>
+                <input style={inputStyle} placeholder="Goleadores Local (Ej: Juan(2))" value={resultado.goleadoresLocal} onChange={(e) => setResultado({...resultado, goleadoresLocal: e.target.value})} />
+                <input style={inputStyle} placeholder="Goleadores Visitante" value={resultado.goleadoresVisitante} onChange={(e) => setResultado({...resultado, goleadoresVisitante: e.target.value})} />
+                <input style={inputStyle} placeholder="MVP del Partido" value={resultado.mvp} onChange={(e) => setResultado({...resultado, mvp: e.target.value})} />
+                
+                <div style={{ marginBottom: "15px" }}>
+                  <label style={{ fontSize: "0.8rem", color: "#94a3b8", display: "block", marginBottom: "5px" }}>Foto del MVP:</label>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={(e) => setFotoFile(e.target.files?.[0] || null)}
+                    style={{ ...inputStyle, fontSize: "0.8rem", padding: "5px" }} 
+                  />
+                </div>
+
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <button 
+                    disabled={subiendofoto}
+                    onClick={registrarResultado} 
+                    style={{ ...btnStyle, flex: 2, fontSize: "0.8rem" }}
+                  >
+                    {subiendofoto ? "SUBIENDO..." : "GUARDAR RESULTADO"}
+                  </button>
+                  <button 
+                    onClick={() => setPartidoParaRegistrar(null)} 
+                    style={{ ...btnStyle, flex: 1, backgroundColor: "#334155", color: "white", fontSize: "0.8rem" }}
+                  >
+                    CANCELAR
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>

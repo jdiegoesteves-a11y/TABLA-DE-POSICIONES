@@ -138,19 +138,19 @@ function VistaSubcategoria({ genero, deporte, categoria }: {
     return (
       <div style={modalOverlayStyle}>
         <div style={modalContentStyle}>
-          <div style={{...modalHeaderStyle, borderBottom: '1px solid #334155', paddingBottom: '20px', marginBottom: '20px'}}>
+          <div style={{ ...modalHeaderStyle, borderBottom: '1px solid #334155', paddingBottom: '20px', marginBottom: '20px' }}>
             <h2 style={{ fontSize: '1.8rem', fontWeight: '900', margin: 0, color: '#f8fafc' }}>
               Historial: <span style={{ background: 'linear-gradient(90deg, #4ffb24, #a3e635)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{equipoSeleccionado}</span>
             </h2>
-            <button onClick={() => { setEquipoSeleccionado(null); setPartidoExpandido(null); }} style={{...closeBtnStyle, background: '#334155', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.3s'}} onMouseEnter={e => e.currentTarget.style.background = '#475569'} onMouseLeave={e => e.currentTarget.style.background = '#334155'}>✕</button>
+            <button onClick={() => { setEquipoSeleccionado(null); setPartidoExpandido(null); }} style={{ ...closeBtnStyle, background: '#334155', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.3s' }} onMouseEnter={e => e.currentTarget.style.background = '#475569'} onMouseLeave={e => e.currentTarget.style.background = '#334155'}>✕</button>
           </div>
           <div style={{ maxHeight: '65vh', overflowY: 'auto', paddingRight: '10px' }}>
-            
+
             {/* PRÓXIMOS PARTIDOS */}
             {proximosPartidos.length > 0 && (
               <div style={{ marginBottom: '30px' }}>
                 <h3 style={{ color: '#94a3b8', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{color: '#fbbf24'}}>📅</span> Próximos Partidos
+                  <span style={{ color: '#fbbf24' }}>📅</span> Próximos Partidos
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {proximosPartidos.map(p => (
@@ -172,7 +172,7 @@ function VistaSubcategoria({ genero, deporte, categoria }: {
             {/* PARTIDOS JUGADOS */}
             <div>
               <h3 style={{ color: '#94a3b8', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{color: '#4ffb24'}}>⚽</span> Partidos Jugados
+                <span style={{ color: '#4ffb24' }}>⚽</span> Partidos Jugados
               </h3>
               {historial.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '30px', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '16px', border: '1px dashed #334155' }}>
@@ -191,14 +191,14 @@ function VistaSubcategoria({ genero, deporte, categoria }: {
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div style={{ flex: 1, textAlign: 'right', fontWeight: '800', fontSize: '1.2rem', color: p.golesLocal > p.golesVisitante ? '#fff' : '#94a3b8', wordBreak: 'break-word' }}>{p.local}</div>
-                          
+
                           {/* SCORE BADGE */}
                           <div style={{ margin: '0 15px', background: 'linear-gradient(145deg, #0f172a, #1e293b)', padding: '10px 20px', borderRadius: '16px', border: '1px solid #475569', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)' }}>
                             <span style={{ fontSize: '1.4rem', fontWeight: '900', color: p.golesLocal > p.golesVisitante ? '#4ffb24' : p.golesLocal < p.golesVisitante ? '#ef4444' : '#cbd5e1' }}>{p.golesLocal}</span>
                             <span style={{ color: '#64748b' }}>-</span>
                             <span style={{ fontSize: '1.4rem', fontWeight: '900', color: p.golesVisitante > p.golesLocal ? '#4ffb24' : p.golesVisitante < p.golesLocal ? '#ef4444' : '#cbd5e1' }}>{p.golesVisitante}</span>
                           </div>
-                          
+
                           <div style={{ flex: 1, textAlign: 'left', fontWeight: '800', fontSize: '1.2rem', color: p.golesVisitante > p.golesLocal ? '#fff' : '#94a3b8', wordBreak: 'break-word' }}>{p.visitante}</div>
                         </div>
 
@@ -206,13 +206,13 @@ function VistaSubcategoria({ genero, deporte, categoria }: {
                         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '15px', gap: '15px', fontSize: '0.85rem' }}>
                           <div style={{ flex: 1, textAlign: 'right', color: '#cbd5e1', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                             {(p.goleadoresLocal || "").split(',').filter(Boolean).map((gol, i) => (
-                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>{gol.trim()} <span style={{fontSize:'0.7rem'}}>⚽</span></div>
+                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>{gol.trim()} <span style={{ fontSize: '0.7rem' }}>⚽</span></div>
                             ))}
                           </div>
                           <div style={{ width: '60px' }}></div> {/* Spacer to align under score */}
                           <div style={{ flex: 1, textAlign: 'left', color: '#cbd5e1', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
                             {(p.goleadoresVisitante || "").split(',').filter(Boolean).map((gol, i) => (
-                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><span style={{fontSize:'0.7rem'}}>⚽</span> {gol.trim()}</div>
+                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><span style={{ fontSize: '0.7rem' }}>⚽</span> {gol.trim()}</div>
                             ))}
                           </div>
                         </div>
@@ -380,8 +380,8 @@ function VistaSubcategoria({ genero, deporte, categoria }: {
 function VistaDeportiva({ genero, deporte, categoria }: {
   genero: string; deporte: string; categoria: string;
 }) {
-  const subcats = categoria === "Inferior" 
-    ? ["8vo", "9no"] 
+  const subcats = categoria === "Inferior"
+    ? ["8vo", "9no"]
     : (categoria === "Intermedia" ? ["10mo", "1ro"] : ["2do", "3ro"]);
 
   return (
@@ -423,6 +423,12 @@ export default function Dashboard() {
           { title: "CATEGORÍA", key: "categoria", opts: ["Inferior", "Intermedia", "Superior"] }
         ].map((s, idx) => step === idx + 1 && (
           <div key={s.key} style={selectionContainer}>
+            {idx === 0 && (
+              <div style={{ marginBottom: '40px' }}>
+                <h2 style={{ fontSize: '2.5rem', fontWeight: '900', color: '#4ffb24', marginBottom: '10px', textTransform: 'uppercase' }}>Bienvenido a Copol Score</h2>
+                <p style={{ fontSize: '1.1rem', color: '#cbd5e1', marginBottom: '30px' }}> Visualiza tus resultados en las olimpiadas 2026-2027</p>
+              </div>
+            )}
             <h1 style={selectionTitle}>Selecciona {s.title}</h1>
             <div style={gridButtons}>
               {s.opts.map(opt => (
@@ -431,7 +437,6 @@ export default function Dashboard() {
                 </button>
               ))}
             </div>
-
             {/* LOGO COPOL: Visible en los 3 pasos de selección inicial */}
             <div style={logoBottomContainer}>
               <img
