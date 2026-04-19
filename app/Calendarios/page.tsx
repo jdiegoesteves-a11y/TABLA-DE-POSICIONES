@@ -183,13 +183,25 @@ function PartidosComponent() {
         <input style={inputStyle} placeholder="MVP del Partido" value={partido.mvp} onChange={(e) => setPartido({...partido, mvp: e.target.value})} />
         
         <div style={{ marginBottom: "15px" }}>
-          <label style={{ fontSize: "0.8rem", color: "#94a3b8", display: "block", marginBottom: "5px" }}>Foto del MVP (ImgBB):</label>
+          <label style={{ fontSize: "0.8rem", color: "#94a3b8", display: "block", marginBottom: "5px" }}>Foto del MVP:</label>
           <input 
             type="file" 
             accept="image/*" 
-            onChange={(e) => setFotoFile(e.target.files?.[0] || null)}
+            onChange={(e) => {
+              const file = e.target.files?.[0] || null;
+              setFotoFile(file);
+            }}
             style={{ ...inputStyle, fontSize: "0.8rem", padding: "5px" }} 
           />
+          {fotoFile && (
+            <div style={{ marginTop: "10px", textAlign: "center" }}>
+              <img 
+                src={URL.createObjectURL(fotoFile)} 
+                alt="Vista previa" 
+                style={{ maxWidth: "100%", maxHeight: "150px", borderRadius: "8px", border: "2px solid #fbbf24" }} 
+              />
+            </div>
+          )}
         </div>
 
         <button disabled={subiendo} onClick={guardar} style={btnStyle}>
@@ -355,9 +367,21 @@ function CalendarioComponent() {
                   <input 
                     type="file" 
                     accept="image/*" 
-                    onChange={(e) => setFotoFile(e.target.files?.[0] || null)}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setFotoFile(file);
+                    }}
                     style={{ ...inputStyle, fontSize: "0.8rem", padding: "5px" }} 
                   />
+                  {fotoFile && (
+                    <div style={{ marginTop: "10px", textAlign: "center" }}>
+                      <img 
+                        src={URL.createObjectURL(fotoFile)} 
+                        alt="Vista previa" 
+                        style={{ maxWidth: "100%", maxHeight: "150px", borderRadius: "8px", border: "2px solid #fbbf24" }} 
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ display: "flex", gap: "10px" }}>
