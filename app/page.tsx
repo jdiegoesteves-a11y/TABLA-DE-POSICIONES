@@ -361,7 +361,7 @@ function VistaSubcategoria({ genero, deporte, categoria }: {
         </div>
 
         <div style={cardStyle}>
-          <div style={cardHeader}>🎯 TOP SCORERS</div>
+          <div style={cardHeader}>🎯 GOLEADORES</div>
           <div style={{ marginTop: '20px' }}>
             {goleadores.length > 0 ? goleadores.map((g, i) => (
               <div key={i} style={scorerRow}>
