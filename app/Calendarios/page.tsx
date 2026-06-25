@@ -84,7 +84,7 @@ function EquiposComponent() {
       <div style={{ ...cardStyle, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "20px" }}>
         <select style={inputStyle} value={config.genero} onChange={(e) => setConfig({...config, genero: e.target.value})}><option value="Varones">Varones</option><option value="Damas">Damas</option></select>
         <select style={inputStyle} value={config.deporte} onChange={(e) => setConfig({...config, deporte: e.target.value})}><option value="Futbol">Fútbol</option><option value="Volley">Volley</option><option value="Basket">Basket</option></select>
-        <select style={inputStyle} value={config.categoria} onChange={(e) => setConfig({...config, categoria: e.target.value})}><option value="8vo">8vo</option><option value="9no">9no</option><option value="10mo">10mo</option><option value="1ro">1ro</option><option value="2do">2do</option><option value="3ro">3ro</option></select>
+        <select style={inputStyle} value={config.categoria} onChange={(e) => setConfig({...config, categoria: e.target.value})}><option value="8vo">8vo</option><option value="9no">9no</option><option value="10mo">10mo</option><option value="1ro">1ro</option><option value="Superior">Superior</option></select>
       </div>
       <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
         <input style={{ ...inputStyle, flex: 1, marginBottom: 0 }} placeholder="Nuevo equipo..." value={nombre} onChange={(e) => setNombre(e.target.value)} />
@@ -166,7 +166,7 @@ function PartidosComponent() {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "20px" }}>
         <select style={inputStyle} value={config.genero} onChange={(e) => setConfig({...config, genero: e.target.value})}><option value="Varones">Varones</option><option value="Damas">Damas</option></select>
         <select style={inputStyle} value={config.deporte} onChange={(e) => setConfig({...config, deporte: e.target.value})}><option value="Futbol">Futbol</option><option value="Volley">Volley</option><option value="Basket">Basket</option></select>
-        <select style={inputStyle} value={config.categoria} onChange={(e) => setConfig({...config, categoria: e.target.value})}><option value="8vo">8vo</option><option value="9no">9no</option><option value="10mo">10mo</option><option value="1ro">1ro</option><option value="2do">2do</option><option value="3ro">3ro</option></select>
+        <select style={inputStyle} value={config.categoria} onChange={(e) => setConfig({...config, categoria: e.target.value})}><option value="8vo">8vo</option><option value="9no">9no</option><option value="10mo">10mo</option><option value="1ro">1ro</option><option value="Superior">Superior</option></select>
       </div>
       <div style={cardStyle}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "10px", alignItems: "center", marginBottom: "15px" }}>
@@ -309,7 +309,7 @@ function CalendarioComponent() {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "20px" }}>
         <select style={inputStyle} value={config.genero} onChange={(e) => setConfig({...config, genero: e.target.value})}><option value="Varones">Varones</option><option value="Damas">Damas</option></select>
         <select style={inputStyle} value={config.deporte} onChange={(e) => setConfig({...config, deporte: e.target.value})}><option value="Futbol">Futbol</option><option value="Volley">Volley</option><option value="Basket">Basket</option></select>
-        <select style={inputStyle} value={config.categoria} onChange={(e) => setConfig({...config, categoria: e.target.value})}><option value="8vo">8vo</option><option value="9no">9no</option><option value="10mo">10mo</option><option value="1ro">1ro</option><option value="2do">2do</option><option value="3ro">3ro</option></select>
+        <select style={inputStyle} value={config.categoria} onChange={(e) => setConfig({...config, categoria: e.target.value})}><option value="8vo">8vo</option><option value="9no">9no</option><option value="10mo">10mo</option><option value="1ro">1ro</option><option value="Superior">Superior</option></select>
       </div>
       <div style={cardStyle}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>

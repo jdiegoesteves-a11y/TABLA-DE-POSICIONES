@@ -382,18 +382,16 @@ function VistaDeportiva({ genero, deporte, categoria }: {
 }) {
   const subcats = categoria === "Inferior"
     ? ["8vo", "9no"]
-    : (categoria === "Intermedia" ? ["10mo", "1ro"] : ["2do", "3ro"]);
+    : (categoria === "Intermedia" ? ["10mo", "1ro"] : ["Superior"]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "60px" }}>
-      <section>
-        <h2 style={{ textAlign: "center", color: "#4ffb24", fontSize: "2.5rem", fontWeight: "900", marginBottom: "20px", borderBottom: "2px solid #334155", paddingBottom: "10px", marginTop: "20px" }}>{subcats[0]}</h2>
-        <VistaSubcategoria genero={genero} deporte={deporte} categoria={subcats[0]} />
-      </section>
-      <section>
-        <h2 style={{ textAlign: "center", color: "#4ffb24", fontSize: "2.5rem", fontWeight: "900", marginBottom: "20px", borderBottom: "2px solid #334155", paddingBottom: "10px", marginTop: "40px" }}>{subcats[1]}</h2>
-        <VistaSubcategoria genero={genero} deporte={deporte} categoria={subcats[1]} />
-      </section>
+      {subcats.map((subcat, idx) => (
+        <section key={subcat}>
+          <h2 style={{ textAlign: "center", color: "#4ffb24", fontSize: "2.5rem", fontWeight: "900", marginBottom: "20px", borderBottom: "2px solid #334155", paddingBottom: "10px", marginTop: idx === 0 ? "20px" : "40px" }}>{subcat}</h2>
+          <VistaSubcategoria genero={genero} deporte={deporte} categoria={subcat} />
+        </section>
+      ))}
     </div>
   );
 }
