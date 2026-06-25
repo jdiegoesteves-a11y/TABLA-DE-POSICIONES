@@ -323,7 +323,7 @@ function VistaSubcategoria({ genero, deporte, categoria }: {
 
       <div style={gridContainer}>
         <div style={cardStyle}>
-          <div style={cardHeader}>🏆 CLASIFICACIÓN DETALLADA</div>
+          <div style={cardHeader}>🏆 TABLA DE POSICIONES</div>
           <div style={{ overflowX: 'auto' }}>
             <table style={tableStyle}>
               <thead>
