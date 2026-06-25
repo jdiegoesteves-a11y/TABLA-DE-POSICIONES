@@ -406,7 +406,7 @@ export default function Dashboard() {
   return (
     <div style={mainContainer}>
       <nav style={navBar}>
-        <div style={logo}>COPOL<span style={{ color: '#4ffb24' }}>SCORE</span></div>
+        <div style={logo}>COPOL<span style={{ color: '#4ffb24' }}>CUP</span></div>
         <Link href="/Calendarios"><button style={adminCircle}>⚙️</button></Link>
       </nav>
 
