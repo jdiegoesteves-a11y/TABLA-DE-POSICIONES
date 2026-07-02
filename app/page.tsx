@@ -45,8 +45,8 @@ function PredictionBar({ local, visitante, tabla, todosLosPartidos, deporte }: {
   ratingV = Math.max(0.1, ratingV);
 
   // Historial de enfrentamientos directos (Head to head)
-  const h2h = todosLosPartidos.filter(p => 
-    (p.local === local && p.visitante === visitante) || 
+  const h2h = todosLosPartidos.filter(p =>
+    (p.local === local && p.visitante === visitante) ||
     (p.local === visitante && p.visitante === local)
   );
 
@@ -90,7 +90,7 @@ function PredictionBar({ local, visitante, tabla, todosLosPartidos, deporte }: {
       const sumPLPV = pL + pV;
       pL = (pL / sumPLPV) * remaining;
       pV = (pV / sumPLPV) * remaining;
-      
+
       winLocal = Math.round(pL * 100);
       draw = Math.round(pDraw * 100);
       winVisitante = 100 - winLocal - draw;
@@ -108,66 +108,66 @@ function PredictionBar({ local, visitante, tabla, todosLosPartidos, deporte }: {
           {hasData ? '🔥 Basado en historial' : '⚖️ Sin datos (Predicción base)'}
         </span>
       </div>
-      
+
       {/* Barra de probabilidad */}
       <div style={{ display: 'flex', height: '20px', borderRadius: '10px', overflow: 'hidden', background: '#334155', fontSize: '0.75rem', fontWeight: '800', color: '#0b1120' }}>
         {winLocal > 0 && (
-          <div 
-            style={{ 
-              width: `${winLocal}%`, 
-              backgroundColor: '#4ffb24', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              transition: 'width 0.5s ease', 
-              color: '#0b1120', 
-              padding: '0 4px', 
-              boxSizing: 'border-box', 
-              whiteSpace: 'nowrap', 
-              overflow: 'hidden' 
-            }} 
+          <div
+            style={{
+              width: `${winLocal}%`,
+              backgroundColor: '#4ffb24',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'width 0.5s ease',
+              color: '#0b1120',
+              padding: '0 4px',
+              boxSizing: 'border-box',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden'
+            }}
             title={`${local}: ${winLocal}%`}
           >
             {winLocal >= 15 ? `${winLocal}%` : ''}
           </div>
         )}
-        
+
         {deporte === "Futbol" && draw > 0 && (
-          <div 
-            style={{ 
-              width: `${draw}%`, 
-              backgroundColor: '#94a3b8', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              transition: 'width 0.5s ease', 
-              color: '#0b1120', 
-              padding: '0 4px', 
-              boxSizing: 'border-box', 
-              whiteSpace: 'nowrap', 
-              overflow: 'hidden' 
-            }} 
+          <div
+            style={{
+              width: `${draw}%`,
+              backgroundColor: '#94a3b8',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'width 0.5s ease',
+              color: '#0b1120',
+              padding: '0 4px',
+              boxSizing: 'border-box',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden'
+            }}
             title={`Empate: ${draw}%`}
           >
             {draw >= 15 ? `Empate ${draw}%` : draw >= 10 ? `${draw}%` : ''}
           </div>
         )}
-        
+
         {winVisitante > 0 && (
-          <div 
-            style={{ 
-              width: `${winVisitante}%`, 
-              backgroundColor: '#60a5fa', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              transition: 'width 0.5s ease', 
-              color: '#0b1120', 
-              padding: '0 4px', 
-              boxSizing: 'border-box', 
-              whiteSpace: 'nowrap', 
-              overflow: 'hidden' 
-            }} 
+          <div
+            style={{
+              width: `${winVisitante}%`,
+              backgroundColor: '#60a5fa',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'width 0.5s ease',
+              color: '#0b1120',
+              padding: '0 4px',
+              boxSizing: 'border-box',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden'
+            }}
             title={`${visitante}: ${winVisitante}%`}
           >
             {winVisitante >= 15 ? `${winVisitante}%` : ''}
