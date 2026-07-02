@@ -13,6 +13,180 @@ interface IPartido { id: string; local: string; visitante: string; golesLocal: n
 interface IGoleador { nombre: string; goles: number; }
 
 /**
+ * COMPONENTE PREDICCIÓN / PROBABILIDAD DE VICTORIA
+ */
+function PredictionBar({ local, visitante, tabla, todosLosPartidos, deporte }: {
+  local: string;
+  visitante: string;
+  tabla: IEquipo[];
+  todosLosPartidos: IPartido[];
+  deporte: string;
+}) {
+  const teamL = tabla.find(t => t.nombre === local);
+  const teamV = tabla.find(t => t.nombre === visitante);
+
+  let ratingL = 1.0;
+  let ratingV = 1.0;
+
+  if (teamL && teamL.pj > 0) {
+    const winRate = teamL.pg / teamL.pj;
+    const pointsPerGame = teamL.puntos / (teamL.pj * (deporte === "Futbol" ? 3 : 2));
+    const gdPerGame = Math.max(-1, Math.min(1, teamL.dg / (teamL.pj * 3)));
+    ratingL = 0.2 + (winRate * 0.4) + (pointsPerGame * 0.4) + (gdPerGame * 0.2);
+  }
+  if (teamV && teamV.pj > 0) {
+    const winRate = teamV.pg / teamV.pj;
+    const pointsPerGame = teamV.puntos / (teamV.pj * (deporte === "Futbol" ? 3 : 2));
+    const gdPerGame = Math.max(-1, Math.min(1, teamV.dg / (teamV.pj * 3)));
+    ratingV = 0.2 + (winRate * 0.4) + (pointsPerGame * 0.4) + (gdPerGame * 0.2);
+  }
+
+  ratingL = Math.max(0.1, ratingL);
+  ratingV = Math.max(0.1, ratingV);
+
+  // Historial de enfrentamientos directos (Head to head)
+  const h2h = todosLosPartidos.filter(p => 
+    (p.local === local && p.visitante === visitante) || 
+    (p.local === visitante && p.visitante === local)
+  );
+
+  if (h2h.length > 0) {
+    let localPoints = 0;
+    let visitantePoints = 0;
+    h2h.forEach(p => {
+      const gl = Number(p.golesLocal || 0);
+      const gv = Number(p.golesVisitante || 0);
+      if (gl > gv) {
+        if (p.local === local) localPoints += 3; else visitantePoints += 3;
+      } else if (gl < gv) {
+        if (p.local === visitante) localPoints += 3; else visitantePoints += 3;
+      } else {
+        localPoints += 1;
+        visitantePoints += 1;
+      }
+    });
+    const maxPossible = h2h.length * 3;
+    const h2hRatingL = localPoints / maxPossible;
+    const h2hRatingV = visitantePoints / maxPossible;
+    ratingL = ratingL * 0.6 + h2hRatingL * 0.4;
+    ratingV = ratingV * 0.6 + h2hRatingV * 0.4;
+  }
+
+  const sum = ratingL + ratingV;
+  let pL = ratingL / sum;
+  let pV = ratingV / sum;
+
+  const hasData = (teamL && teamL.pj > 0) || (teamV && teamV.pj > 0) || h2h.length > 0;
+
+  let winLocal = 50;
+  let draw = 0;
+  let winVisitante = 50;
+
+  if (hasData) {
+    if (deporte === "Futbol") {
+      const diff = Math.abs(pL - pV);
+      const pDraw = Math.max(0.15, 0.30 - diff * 0.5); // 15% a 30% prob de empate
+      const remaining = 1 - pDraw;
+      const sumPLPV = pL + pV;
+      pL = (pL / sumPLPV) * remaining;
+      pV = (pV / sumPLPV) * remaining;
+      
+      winLocal = Math.round(pL * 100);
+      draw = Math.round(pDraw * 100);
+      winVisitante = 100 - winLocal - draw;
+    } else {
+      winLocal = Math.round(pL * 100);
+      winVisitante = 100 - winLocal;
+    }
+  }
+
+  return (
+    <div style={{ marginTop: '15px', borderTop: '1px dashed #334155', paddingTop: '15px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '6px', fontWeight: 'bold' }}>
+        <span>📊 Probabilidad de victoria</span>
+        <span style={{ color: hasData ? '#fbbf24' : '#94a3b8', fontSize: '0.75rem' }}>
+          {hasData ? '🔥 Basado en historial' : '⚖️ Sin datos (Predicción base)'}
+        </span>
+      </div>
+      
+      {/* Barra de probabilidad */}
+      <div style={{ display: 'flex', height: '20px', borderRadius: '10px', overflow: 'hidden', background: '#334155', fontSize: '0.75rem', fontWeight: '800', color: '#0b1120' }}>
+        {winLocal > 0 && (
+          <div 
+            style={{ 
+              width: `${winLocal}%`, 
+              backgroundColor: '#4ffb24', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              transition: 'width 0.5s ease', 
+              color: '#0b1120', 
+              padding: '0 4px', 
+              boxSizing: 'border-box', 
+              whiteSpace: 'nowrap', 
+              overflow: 'hidden' 
+            }} 
+            title={`${local}: ${winLocal}%`}
+          >
+            {winLocal >= 15 ? `${winLocal}%` : ''}
+          </div>
+        )}
+        
+        {deporte === "Futbol" && draw > 0 && (
+          <div 
+            style={{ 
+              width: `${draw}%`, 
+              backgroundColor: '#94a3b8', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              transition: 'width 0.5s ease', 
+              color: '#0b1120', 
+              padding: '0 4px', 
+              boxSizing: 'border-box', 
+              whiteSpace: 'nowrap', 
+              overflow: 'hidden' 
+            }} 
+            title={`Empate: ${draw}%`}
+          >
+            {draw >= 15 ? `Empate ${draw}%` : draw >= 10 ? `${draw}%` : ''}
+          </div>
+        )}
+        
+        {winVisitante > 0 && (
+          <div 
+            style={{ 
+              width: `${winVisitante}%`, 
+              backgroundColor: '#60a5fa', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              transition: 'width 0.5s ease', 
+              color: '#0b1120', 
+              padding: '0 4px', 
+              boxSizing: 'border-box', 
+              whiteSpace: 'nowrap', 
+              overflow: 'hidden' 
+            }} 
+            title={`${visitante}: ${winVisitante}%`}
+          >
+            {winVisitante >= 15 ? `${winVisitante}%` : ''}
+          </div>
+        )}
+      </div>
+
+      {/* Leyenda */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#94a3b8', marginTop: '5px', padding: '0 5px' }}>
+        <span style={{ color: '#4ffb24', fontWeight: '600' }}>● {local} ({winLocal}%)</span>
+        {deporte === "Futbol" && <span style={{ color: '#94a3b8', fontWeight: '600' }}>● Empate ({draw}%)</span>}
+        <span style={{ color: '#60a5fa', fontWeight: '600' }}>● {visitante} ({winVisitante}%)</span>
+      </div>
+    </div>
+  );
+}
+
+
+/**
  * COMPONENTE VISTA DEPORTIVA (TABLAS Y CALENDARIO)
  */
 function VistaSubcategoria({ genero, deporte, categoria }: {
@@ -298,19 +472,23 @@ function VistaSubcategoria({ genero, deporte, categoria }: {
                 <span style={{ ...vsCircle, width: '50px', height: '50px' }}>VS</span>
                 <span style={{ ...teamMain, fontSize: '1.8rem' }}>{calendario[0].visitante}</span>
               </div>
-              <p style={{ ...timeTag, fontSize: '1.1rem', fontWeight: 'bold', color: '#4ffb24' }}>📅 {calendario[0].fecha} • 🕒 {calendario[0].hora}</p>
+              <p style={{ ...timeTag, fontSize: '1.1rem', fontWeight: 'bold', color: '#4ffb24', marginBottom: '10px' }}>📅 {calendario[0].fecha} • 🕒 {calendario[0].hora}</p>
+              <PredictionBar local={calendario[0].local} visitante={calendario[0].visitante} tabla={tabla} todosLosPartidos={todosLosPartidos} deporte={deporte} />
             </div>
 
             {calendario.length > 1 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '15px', marginTop: '20px' }}>
                 {calendario.slice(1).map((p, i) => (
-                  <div key={i} style={{ padding: '15px', background: '#0f172a', borderRadius: '12px', border: '1px solid #1e293b' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '1rem', fontWeight: '600' }}>{p.local} <span style={{ color: '#64748b', fontSize: '0.8rem', margin: '0 5px' }}>vs</span> {p.visitante}</span>
+                  <div key={i} style={{ padding: '15px', background: '#0f172a', borderRadius: '12px', border: '1px solid #1e293b', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '1rem', fontWeight: '600' }}>{p.local} <span style={{ color: '#64748b', fontSize: '0.8rem', margin: '0 5px' }}>vs</span> {p.visitante}</span>
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '10px' }}>
+                        📅 {p.fecha} • 🕒 {p.hora}
+                      </div>
                     </div>
-                    <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
-                      📅 {p.fecha} • 🕒 {p.hora}
-                    </div>
+                    <PredictionBar local={p.local} visitante={p.visitante} tabla={tabla} todosLosPartidos={todosLosPartidos} deporte={deporte} />
                   </div>
                 ))}
               </div>
